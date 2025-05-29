@@ -1,13 +1,18 @@
 package com.github.rrin;
 
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 public class Main {
     public static void main(String[] args) {
         String content = "Hello World!";
-        System.out.println(bytesToHex(encode(content)));
+        byte[] encoded = encode(content);
+        System.out.println(bytesToHex(encoded));
+        String decoded = decode(encoded);
+        System.out.println(decoded);
     }
 
     public static byte[] encode(String content) {
@@ -34,6 +39,27 @@ public class Main {
                 .putShort(CRC16.sum(bodyBuffer.array()));       // packet body checksum
 
         return buffer.array();
+    }
+
+    public static String decode(byte[] content) {
+        ByteBuffer buffer = ByteBuffer.wrap(content);
+        byte bMagic = buffer.get();
+        if (bMagic != 0x13) { throw new IllegalArgumentException(); }
+        byte bSrc = buffer.get();
+        long bPktId = buffer.getLong();
+        int wLen = buffer.getInt();
+        short wHeadSum =  buffer.getShort();
+        short expectedHeadSum = CRC16.sum(Arrays.copyOfRange(content, 0, 14));
+        if (wHeadSum != expectedHeadSum) { throw new IllegalArgumentException(); }
+        int cType = buffer.getInt();
+        int bUserId = buffer.getInt();
+        byte[] message = new byte[wLen - 8];
+        buffer.get(message, 0, message.length);
+        short wBodySum = buffer.getShort();
+        short expectedBodySum = CRC16.sum(Arrays.copyOfRange(content, 16, 16 + wLen));
+        if (wBodySum != expectedBodySum) { throw new IllegalArgumentException(); }
+
+        return new String(message, StandardCharsets.UTF_8);
     }
 
     public static String bytesToHex(byte[] bytes) {
