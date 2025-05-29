@@ -1,22 +1,32 @@
 package com.github.rrin;
 
-import java.lang.reflect.Array;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class Main {
+    private static ObjectMapper objectMapper = new ObjectMapper();
+
     public static void main(String[] args) {
-        String content = "Hello World!";
-        byte[] encoded = encode(content);
+        CreateProduct createProduct = new CreateProduct("Product", 1000.0);
+        byte[] encoded = encode(createProduct);
         System.out.println(bytesToHex(encoded));
-        String decoded = decode(encoded);
+        CreateProduct decoded = decode(encoded);
         System.out.println(decoded);
     }
 
-    public static byte[] encode(String content) {
-        byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
+    public static byte[] encode(CreateProduct createProduct) {
+        byte[] contentBytes = null;
+        try {
+            contentBytes = objectMapper.writeValueAsBytes(createProduct);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
         int msgSize = contentBytes.length + 4 + 4;
         int packetSize = 1 + 1 + 8 + 4 + 2 + msgSize + 2;
 
@@ -41,7 +51,7 @@ public class Main {
         return buffer.array();
     }
 
-    public static String decode(byte[] content) {
+    public static CreateProduct decode(byte[] content) {
         ByteBuffer buffer = ByteBuffer.wrap(content);
         byte bMagic = buffer.get();
         if (bMagic != 0x13) { throw new IllegalArgumentException(); }
@@ -59,7 +69,11 @@ public class Main {
         short expectedBodySum = CRC16.sum(Arrays.copyOfRange(content, 16, 16 + wLen));
         if (wBodySum != expectedBodySum) { throw new IllegalArgumentException(); }
 
-        return new String(message, StandardCharsets.UTF_8);
+        try {
+            return objectMapper.readValue(message, CreateProduct.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static String bytesToHex(byte[] bytes) {
