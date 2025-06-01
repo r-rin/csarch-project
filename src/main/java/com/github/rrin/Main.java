@@ -1,7 +1,5 @@
 package com.github.rrin;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 

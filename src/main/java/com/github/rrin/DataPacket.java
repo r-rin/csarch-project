@@ -3,12 +3,11 @@ package com.github.rrin;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class DataPacket<T> {
 
@@ -102,13 +101,6 @@ public class DataPacket<T> {
     }
 
     public byte[] toByteArray() {
-        byte[] contentBytes = null;
-        try {
-            contentBytes = objectMapper.writeValueAsBytes(getBody().getData());
-            contentBytes = DataEncryption.encrypt(contentBytes);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
 
         int msgSize = getBodyLength();
         int packetSize = 1 + 1 + 8 + 4 + 2 + msgSize + 2;
@@ -122,17 +114,26 @@ public class DataPacket<T> {
                 .putInt(msgSize);               // wLen
 
         PacketBody<T> body = getBody();
-        ByteBuffer bodyBuffer = ByteBuffer.allocate(msgSize).order(ByteOrder.BIG_ENDIAN);
-        bodyBuffer.putInt(body.getCommandType())          // cType
-                .putInt(body.getUserId())                 // bUserId
-                .put(contentBytes);                       // message
+        byte[] bodyData = body.toByteArray();
 
         buffer.put(headerBuffer.array())    // packet head
                 .putShort(CRC16.sum(headerBuffer.array()))      // packet head checksum
-                .put(bodyBuffer.array())    // packet body
-                .putShort(CRC16.sum(bodyBuffer.array()));       // packet body checksum
+                .put(bodyData)    // packet body
+                .putShort(CRC16.sum(bodyData));       // packet body checksum
 
         return buffer.array();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        DataPacket<?> that = (DataPacket<?>) o;
+        return magicByte == that.magicByte && sourceId == that.sourceId && packetId == that.packetId && bodyLength == that.bodyLength && headerChecksum == that.headerChecksum && Objects.equals(body, that.body);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(magicByte, sourceId, packetId, bodyLength, headerChecksum, body, bodyChecksum);
     }
 
     public static class PacketBody<T> {
@@ -178,6 +179,18 @@ public class DataPacket<T> {
                     .putInt(userId)
                     .put(dataBytes);
             return buffer.array();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            PacketBody<?> that = (PacketBody<?>) o;
+            return commandType == that.commandType && userId == that.userId && Objects.equals(data, that.data);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(commandType, userId, data);
         }
     }
 }
