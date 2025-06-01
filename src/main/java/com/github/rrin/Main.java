@@ -1,11 +1,7 @@
 package com.github.rrin;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -14,66 +10,20 @@ public class Main {
 
     public static void main(String[] args) {
         CreateProduct createProduct = new CreateProduct("Product", 1000.0);
-        byte[] encoded = encode(createProduct);
-        System.out.println(bytesToHex(encoded));
-        CreateProduct decoded = decode(encoded);
-        System.out.println(decoded);
-    }
+        DataPacket<CreateProduct> dataPacket = new DataPacket<CreateProduct>(
+                (byte) 0x13,
+                (byte) 7,
+                1,
+                100,
+                5,
+                createProduct
+        );
 
-    public static byte[] encode(CreateProduct createProduct) {
-        byte[] contentBytes = null;
-        try {
-            contentBytes = objectMapper.writeValueAsBytes(createProduct);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        int msgSize = contentBytes.length + 4 + 4;
-        int packetSize = 1 + 1 + 8 + 4 + 2 + msgSize + 2;
-
-        ByteBuffer buffer = ByteBuffer.allocate(packetSize).order(ByteOrder.BIG_ENDIAN);
-
-        ByteBuffer headerBuffer = ByteBuffer.allocate(1 + 1 + 8 + 4).order(ByteOrder.BIG_ENDIAN);
-        headerBuffer.put((byte) 0x13)       // bMagic
-                .put((byte) 1)              // bSrc
-                .putLong(2)           // bPktId
-                .putInt(msgSize);           // wLen
-
-        ByteBuffer bodyBuffer = ByteBuffer.allocate(msgSize).order(ByteOrder.BIG_ENDIAN);
-        bodyBuffer.putInt(3)          // cType
-                .putInt(4)            // bUserId
-                .put(contentBytes);         // message
-
-        buffer.put(headerBuffer.array())    // packet head
-                .putShort(CRC16.sum(headerBuffer.array()))      // packet head checksum
-                .put(bodyBuffer.array())    // packet body
-                .putShort(CRC16.sum(bodyBuffer.array()));       // packet body checksum
-
-        return buffer.array();
-    }
-
-    public static CreateProduct decode(byte[] content) {
-        ByteBuffer buffer = ByteBuffer.wrap(content);
-        byte bMagic = buffer.get();
-        if (bMagic != 0x13) { throw new IllegalArgumentException(); }
-        byte bSrc = buffer.get();
-        long bPktId = buffer.getLong();
-        int wLen = buffer.getInt();
-        short wHeadSum =  buffer.getShort();
-        short expectedHeadSum = CRC16.sum(Arrays.copyOfRange(content, 0, 14));
-        if (wHeadSum != expectedHeadSum) { throw new IllegalArgumentException(); }
-        int cType = buffer.getInt();
-        int bUserId = buffer.getInt();
-        byte[] message = new byte[wLen - 8];
-        buffer.get(message, 0, message.length);
-        short wBodySum = buffer.getShort();
-        short expectedBodySum = CRC16.sum(Arrays.copyOfRange(content, 16, 16 + wLen));
-        if (wBodySum != expectedBodySum) { throw new IllegalArgumentException(); }
-
-        try {
-            return objectMapper.readValue(message, CreateProduct.class);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        byte[] encoded = dataPacket.toByteArray();
+        System.out.printf("Encoded data: %s%n", Arrays.toString(encoded));
+        System.out.println("Hex encoded data: " + bytesToHex(encoded));
+        DataPacket<CreateProduct> decoded = DataPacket.fromByteArray(encoded, CreateProduct.class);
+        System.out.println("Decoded data: " + decoded.getBody().getData());
     }
 
     public static String bytesToHex(byte[] bytes) {
