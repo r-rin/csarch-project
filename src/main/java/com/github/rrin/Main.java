@@ -6,8 +6,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class Main {
-    private static ObjectMapper objectMapper = new ObjectMapper();
-
     public static void main(String[] args) {
         CreateProduct createProduct = new CreateProduct("Product", 1000.0);
         DataPacket<CreateProduct> dataPacket = new DataPacket<CreateProduct>(

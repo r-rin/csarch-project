@@ -3,6 +3,8 @@ package com.github.rrin;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -91,6 +93,7 @@ public class DataPacket<T> {
         if (wBodySum != expectedBodySum) { throw new IllegalArgumentException(); }
 
         try {
+            message = DataEncryption.decrypt(message);
             T dataObject = objectMapper.readValue(message, dataClass);
             return new DataPacket<>(magicByte, sourceId, packetId, commandType, userId, dataObject);
         } catch (IOException e) {
@@ -102,6 +105,7 @@ public class DataPacket<T> {
         byte[] contentBytes = null;
         try {
             contentBytes = objectMapper.writeValueAsBytes(getBody().getData());
+            contentBytes = DataEncryption.encrypt(contentBytes);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -160,7 +164,8 @@ public class DataPacket<T> {
 
         private byte[] getDataInBytes() {
             try {
-                return objectMapper.writeValueAsBytes(data);
+                byte[] bytes = objectMapper.writeValueAsBytes(data);
+                return DataEncryption.encrypt(bytes);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
