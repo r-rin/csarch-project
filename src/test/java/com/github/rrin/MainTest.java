@@ -13,7 +13,7 @@ class MainTest {
                 (byte) 0x13,
                 (byte) 7,
                 1,
-                100,
+                CommandType.QUERY_QUANTITY,
                 5,
                 expectedProduct
         );
@@ -46,7 +46,7 @@ class MainTest {
                 (byte) 0x13,
                 (byte) 2,
                 6,
-                150,
+                CommandType.QUERY_QUANTITY,
                 2,
                 p1
         );
@@ -54,7 +54,7 @@ class MainTest {
                 (byte) 0x13,
                 (byte) 2,
                 6,
-                150,
+                CommandType.QUERY_QUANTITY,
                 2,
                 p2
         );

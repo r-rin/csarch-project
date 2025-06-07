@@ -10,7 +10,7 @@ public class Main {
                 (byte) 0x13,
                 (byte) 7,
                 1,
-                100,
+                CommandType.QUERY_QUANTITY,
                 5,
                 createProduct
         );

@@ -21,8 +21,8 @@ public class DataPacket<T> {
     private final PacketBody<T> body;
     private final short bodyChecksum;
 
-    DataPacket(byte magicByte, byte sourceId, long packetId, int commandType, int userId, T data) {
-        this.body = new PacketBody<>(commandType, userId, data);
+    DataPacket(byte magicByte, byte sourceId, long packetId, CommandType command, int userId, T data) {
+        this.body = new PacketBody<>(command, userId, data);
 
         this.magicByte = magicByte;
         this.sourceId = sourceId;
@@ -94,7 +94,7 @@ public class DataPacket<T> {
         try {
             message = DataEncryption.decrypt(message);
             T dataObject = objectMapper.readValue(message, dataClass);
-            return new DataPacket<>(magicByte, sourceId, packetId, commandType, userId, dataObject);
+            return new DataPacket<>(magicByte, sourceId, packetId, CommandType.fromCode(commandType), userId, dataObject);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -137,18 +137,18 @@ public class DataPacket<T> {
     }
 
     public static class PacketBody<T> {
-        private final int commandType;
+        private final CommandType command;
         private final int userId;
         private final T data;
 
-        PacketBody(int commandType, int userId, T data) {
-            this.commandType = commandType;
+        PacketBody(CommandType command, int userId, T data) {
+            this.command = command;
             this.userId = userId;
             this.data = data;
         }
 
-        public int getCommandType() {
-            return commandType;
+        public CommandType getCommand() {
+            return command;
         }
 
         public int getUserId() {
@@ -175,7 +175,7 @@ public class DataPacket<T> {
         public byte[] toByteArray() {
             byte[] dataBytes = getDataInBytes();
             ByteBuffer buffer = ByteBuffer.allocate(calcBodyLength()).order(ByteOrder.BIG_ENDIAN);
-            buffer.putInt(commandType)
+            buffer.putInt(command.getCode())
                     .putInt(userId)
                     .put(dataBytes);
             return buffer.array();
@@ -185,12 +185,12 @@ public class DataPacket<T> {
         public boolean equals(Object o) {
             if (o == null || getClass() != o.getClass()) return false;
             PacketBody<?> that = (PacketBody<?>) o;
-            return commandType == that.commandType && userId == that.userId && Objects.equals(data, that.data);
+            return command == that.command && userId == that.userId && Objects.equals(data, that.data);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(commandType, userId, data);
+            return Objects.hash(command, userId, data);
         }
     }
 }
