@@ -76,7 +76,7 @@ public class MockClient implements Runnable {
                 socket.send(udpPacket);
                 System.out.println("Sent packet " + packet.getPacketId() + " with command " +
                         packet.getBody().getCommand() + " (" + packetBytes.length + " bytes)");
-                System.out.println("Sent data: " + Main.bytesToHex(packetBytes));
+                System.out.println("Sent data: " + Converter.bytesToHex(packetBytes));
 
                 // Wait random time before next mocked packet
                 Thread.sleep(1000 + random.nextInt(5000));

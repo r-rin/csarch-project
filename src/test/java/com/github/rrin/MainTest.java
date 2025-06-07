@@ -2,6 +2,7 @@ package com.github.rrin;
 
 import com.github.rrin.dto.CreateProduct;
 import com.github.rrin.util.CommandType;
+import com.github.rrin.util.Converter;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -61,8 +62,8 @@ class MainTest {
                 p2
         );
 
-        String encodedP1 = Main.bytesToHex(dataPacket1.toByteArray());
-        String encodedP2 = Main.bytesToHex(dataPacket2.toByteArray());
+        String encodedP1 = Converter.bytesToHex(dataPacket1.toByteArray());
+        String encodedP2 = Converter.bytesToHex(dataPacket2.toByteArray());
         assertNotEquals(encodedP1, encodedP2);
     }
 

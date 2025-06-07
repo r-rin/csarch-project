@@ -1,5 +1,6 @@
 package com.github.rrin.implementation;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.rrin.DataPacket;
 import com.github.rrin.dto.*;
 import com.github.rrin.interfaces.IProcessor;
@@ -13,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Processor implements IProcessor, Runnable {
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final BlockingQueue<DataPacket<?>> inputQueue;
     private final BlockingQueue<CommandResponse> outputQueue;
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -74,23 +76,46 @@ public class Processor implements IProcessor, Runnable {
             CommandType command = message.getBody().getCommand();
 
             return switch (command) {
-                case QUERY_QUANTITY -> handleQueryQuantity(data);
-                case REMOVE_GOODS -> handleRemoveGoods(data);
-                case ADD_GOODS -> handleAddGoods(data);
-                case ADD_GROUP -> handleAddGroup(data);
-                case ADD_PRODUCT_TO_GROUP -> handleAddProductToGroup(data);
-                case SET_PRICE -> handleSetPrice(data);
+                case QUERY_QUANTITY -> {
+                    QueryQuantity q = convertValue(data, QueryQuantity.class);
+                    yield handleQueryQuantity(q);
+                }
+                case REMOVE_GOODS -> {
+                    ModifyGoods g = convertValue(data, ModifyGoods.class);
+                    yield handleRemoveGoods(g);
+                }
+                case ADD_GOODS -> {
+                    ModifyGoods g = convertValue(data, ModifyGoods.class);
+                    yield handleAddGoods(g);
+                }
+                case ADD_GROUP -> {
+                    CreateGroup g = convertValue(data, CreateGroup.class);
+                    yield handleAddGroup(g);
+                }
+                case ADD_PRODUCT_TO_GROUP -> {
+                    AddProductToGroup g = convertValue(data, AddProductToGroup.class);
+                    yield handleAddProductToGroup(g);
+                }
+                case SET_PRICE -> {
+                    CreateProduct p = convertValue(data, CreateProduct.class);
+                    yield handleSetPrice(p);
+                }
             };
+
         } catch (Exception e) {
             System.err.println("Error processing message: " + e.getMessage());
-            return new CommandResponse(0, "Error!", "An error occurred while processing data: " + e.getMessage());
+            return new CommandResponse(0, "Error", "An error occurred while processing data: " + e.getMessage());
         }
     }
 
     private CommandResponse handleQueryQuantity(Object data) {
         if (data instanceof QueryQuantity(String productName)) {
             AtomicInteger quantity = productQuantities.get(productName);
-            int result = quantity != null ? quantity.get() : 0;
+            if (quantity == null) {
+                throw new IllegalArgumentException("No such product: " + productName);
+            }
+
+            int result = quantity.get();
             String message = String.format("Quantity for product \"%s\" is %s", productName, result);
             System.out.println(message);
             return new CommandResponse(200, "Success!", message);
@@ -102,8 +127,11 @@ public class Processor implements IProcessor, Runnable {
         if (data instanceof ModifyGoods(String productName, int amount)) {
             lock.writeLock().lock();
             try {
-                AtomicInteger quantity = productQuantities.computeIfAbsent(productName,
-                        k -> new AtomicInteger(0));
+                AtomicInteger quantity = productQuantities.get(productName);
+
+                if (quantity == null) {
+                    throw new IllegalArgumentException("No such product: " + productName);
+                }
 
                 if (amount < 1) throw new IllegalArgumentException("Invalid amount for REMOVE_GOODS: " + amount);
 
@@ -117,8 +145,7 @@ public class Processor implements IProcessor, Runnable {
                     System.out.println(message);
                     return new CommandResponse(200, "Success!", message);
                 } else {
-                    throw new IllegalStateException("Amount to subtract is too big. Available: " + currentQuantity +
-                            ", requested: " + amount);
+                    throw new IllegalStateException("Amount to subtract is too big. Available: " + currentQuantity + ", requested: " + amount);
                 }
             } finally {
                 lock.writeLock().unlock();
@@ -135,6 +162,8 @@ public class Processor implements IProcessor, Runnable {
             if (amount < 1) throw new IllegalArgumentException("Invalid amount for ADD_GOODS: " + amount);
 
             int newQuantity = quantity.addAndGet(amount);
+            productPrices.putIfAbsent(productName, 100.0);
+
             String message = String.format("Added %d of %s. New quantity: %d", amount, productName, newQuantity);
             System.out.println(message);
             return new CommandResponse(200, "Success!", message);
@@ -175,11 +204,19 @@ public class Processor implements IProcessor, Runnable {
 
     private CommandResponse handleSetPrice(Object data) {
         if (data instanceof CreateProduct(String name, double price)) {
+            if (!productQuantities.containsKey(name)) {
+                throw new IllegalArgumentException("Product does not exist: " + name);
+            }
+
             productPrices.put(name, price);
             String message = String.format("Set price for product \"%s\" with value \"%s\"", name, price);
             System.out.println(message);
             return new CommandResponse(200, "Success!", message);
         }
         throw new IllegalArgumentException("Invalid data for SET_PRICE");
+    }
+
+    private <T> T convertValue(Object data, Class<T> clazz) {
+        return objectMapper.convertValue(data, clazz);
     }
 }

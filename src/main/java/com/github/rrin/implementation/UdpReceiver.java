@@ -2,6 +2,7 @@ package com.github.rrin.implementation;
 
 import com.github.rrin.Main;
 import com.github.rrin.interfaces.IReceiver;
+import com.github.rrin.util.Converter;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -28,7 +29,7 @@ public class UdpReceiver implements IReceiver, Runnable {
         if (running.compareAndSet(false, true)) {
             try {
                 socket = new DatagramSocket(port);
-                socket.setSoTimeout(1000);
+                //socket.setSoTimeout(1000);
                 receiverThread = new Thread(this, "UDPReceiver");
                 receiverThread.start();
                 System.out.println("UDPReceiver started on port " + port);
@@ -70,11 +71,10 @@ public class UdpReceiver implements IReceiver, Runnable {
                 System.arraycopy(packet.getData(), packet.getOffset(), receivedData, 0, packet.getLength());
 
                 System.out.println("Received packet from " + packet.getAddress() + ":" + packet.getPort() + " (" + receivedData.length + " bytes)");
-                System.out.println("Data received: " + Main.bytesToHex(receivedData));
+                System.out.println("Data received: " + Converter.bytesToHex(receivedData));
                 outputQueue.put(receivedData);
 
-            } catch (SocketTimeoutException e) {
-                System.out.println("Socket timed out");
+            } catch (SocketTimeoutException ignored) {
             } catch (IOException e) {
                 if (running.get()) {
                     System.err.println("Error receiving data: " + e.getMessage());
