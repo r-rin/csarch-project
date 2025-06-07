@@ -1,5 +1,6 @@
 package com.github.rrin;
 
+import com.github.rrin.dto.CreateProduct;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

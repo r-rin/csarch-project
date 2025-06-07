@@ -1,5 +1,7 @@
 package com.github.rrin;
 
+import com.github.rrin.dto.CreateProduct;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
