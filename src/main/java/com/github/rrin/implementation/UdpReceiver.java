@@ -1,5 +1,6 @@
-package com.github.rrin;
+package com.github.rrin.implementation;
 
+import com.github.rrin.Main;
 import com.github.rrin.interfaces.IReceiver;
 
 import java.io.IOException;

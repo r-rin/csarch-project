@@ -1,4 +1,4 @@
-package com.github.rrin;
+package com.github.rrin.util;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;

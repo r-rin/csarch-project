@@ -1,4 +1,4 @@
-package com.github.rrin;
+package com.github.rrin.util;
 
 public enum CommandType {
     QUERY_QUANTITY(1),

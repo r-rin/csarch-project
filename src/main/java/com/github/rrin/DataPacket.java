@@ -21,6 +21,9 @@ package com.github.rrin;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.rrin.util.CRC16;
+import com.github.rrin.util.CommandType;
+import com.github.rrin.util.DataEncryption;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -40,7 +43,7 @@ public class DataPacket<T> {
     private final PacketBody<T> body;
     private final short bodyChecksum;
 
-    DataPacket(byte magicByte, byte sourceId, long packetId, CommandType command, int userId, T data) {
+    public DataPacket(byte magicByte, byte sourceId, long packetId, CommandType command, int userId, T data) {
         this.body = new PacketBody<>(command, userId, data);
 
         this.magicByte = magicByte;

@@ -1,6 +1,8 @@
-package com.github.rrin;
+package com.github.rrin.util;
 
 
+import com.github.rrin.DataPacket;
+import com.github.rrin.Main;
 import com.github.rrin.dto.*;
 
 import java.net.DatagramPacket;
@@ -8,7 +10,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Random;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MockClient implements Runnable {
