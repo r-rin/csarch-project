@@ -4,24 +4,35 @@ import com.github.rrin.dto.CreateProduct;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.concurrent.ArrayBlockingQueue;
 
 public class Main {
     public static void main(String[] args) {
-        CreateProduct createProduct = new CreateProduct("Product", 1000.0);
-        DataPacket<CreateProduct> dataPacket = new DataPacket<CreateProduct>(
-                (byte) 0x13,
-                (byte) 7,
-                1,
-                CommandType.QUERY_QUANTITY,
-                5,
-                createProduct
-        );
+        String serverHost = "127.0.0.1";
+        int serverPort = 5555;
 
-        byte[] encoded = dataPacket.toByteArray();
-        System.out.printf("Encoded data: %s%n", Arrays.toString(encoded));
-        System.out.println("Hex encoded data: " + bytesToHex(encoded));
-        DataPacket<CreateProduct> decoded = DataPacket.fromByteArray(encoded, CreateProduct.class);
-        System.out.println("Decoded data: " + decoded.getBody().getData());
+        UdpReceiver receiver = new UdpReceiver(new ArrayBlockingQueue<>(100), serverPort);
+        MockClient client = new MockClient(serverHost, serverPort);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("\n!!! Stopping test client !!!");
+            client.stop();
+            receiver.stop();
+        }));
+
+        try {
+            receiver.start();
+            client.start();
+
+            while (client.isRunning()) {
+                Thread.sleep(1000);
+            }
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            client.stop();
+        }
     }
 
     public static String bytesToHex(byte[] bytes) {
@@ -35,20 +46,3 @@ public class Main {
         return new String(hexChars, StandardCharsets.UTF_8);
     }
 }
-
-/*
-Offset  Length  Mnemonic    Notes
-00      1	    bMagic	    Байт, що вказує на початок пакету - значення 13h (h - значить hex)
-01	    1	    bSrc	    Унікальний номер клієнтського застосування
-02	    8	    bPktId	    Номер повідомлення. Номер постійно збільшується. В форматі big-endian
-10	    4	    wLen	    Довжина пакету даних big-endian
-14	    2	    wCrc16	    CRC16 байтів (00-13) big-endian
-16	    wLen	bMsq	    Message - корисне повідомлення
-16+wLen	2	    wCrc16	    CRC16 байтів (16 до 16+wLen-1) big-endian
-
-Структура повідомлення (message)
-Offset	Length	Mnemonic 	Notes
-00	    4	    cType	    Код команди big-endian
-04	    4	    bUserId     Від кого надіслане повідомлення. В системі може бути багато клієнтів. А на кожному з цих клієнтів може працювати один з багатьох працівників. big-endian
-08	    wLen-8	message     корисна інформація, можна покласти JSON як масив байтів big-endian
- */

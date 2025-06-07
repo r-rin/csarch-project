@@ -1,3 +1,22 @@
+/*
+Packet structure:
+
+Offset  Length  Mnemonic    Notes
+00      1	    bMagic	    Байт, що вказує на початок пакету - значення 13h (h - значить hex)
+01	    1	    bSrc	    Унікальний номер клієнтського застосування
+02	    8	    bPktId	    Номер повідомлення. Номер постійно збільшується. В форматі big-endian
+10	    4	    wLen	    Довжина пакету даних big-endian
+14	    2	    wCrc16	    CRC16 байтів (00-13) big-endian
+16	    wLen	bMsq	    Message - корисне повідомлення
+16+wLen	2	    wCrc16	    CRC16 байтів (16 до 16+wLen-1) big-endian
+
+Структура повідомлення (message)
+Offset	Length	Mnemonic 	Notes
+00	    4	    cType	    Код команди big-endian
+04	    4	    bUserId     Від кого надіслане повідомлення. В системі може бути багато клієнтів. А на кожному з цих клієнтів може працювати один з багатьох працівників. big-endian
+08	    wLen-8	message     корисна інформація, можна покласти JSON як масив байтів big-endian
+*/
+
 package com.github.rrin;
 
 import com.fasterxml.jackson.core.JsonProcessingException;

@@ -24,6 +24,10 @@ public class MockClient implements Runnable {
         this.serverPort = serverPort;
     }
 
+    public boolean isRunning() {
+        return running.get();
+    }
+
     public void start() {
         if (running.compareAndSet(false, true)) {
             try {
@@ -112,33 +116,5 @@ public class MockClient implements Runnable {
             case ADD_PRODUCT_TO_GROUP -> new AddProductToGroup("Product" + random.nextInt(10), "Group" + random.nextInt(5));
             case SET_PRICE -> new CreateProduct("Product" + random.nextInt(10), 10.0 + random.nextDouble() * 990.0);
         };
-    }
-
-    public static void main(String[] args) {
-        String serverHost = "127.0.0.1";
-        int serverPort = 5555;
-
-        UdpReceiver receiver = new UdpReceiver(new ArrayBlockingQueue<>(100), serverPort);
-        MockClient client = new MockClient(serverHost, serverPort);
-
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("\n!!! Stopping test client !!!");
-            client.stop();
-            receiver.stop();
-        }));
-
-        try {
-            receiver.start();
-            client.start();
-
-            while (client.running.get()) {
-                Thread.sleep(1000);
-            }
-
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } finally {
-            client.stop();
-        }
     }
 }
