@@ -5,6 +5,7 @@ import com.github.rrin.DataPacket;
 import com.github.rrin.dto.*;
 import com.github.rrin.interfaces.IProcessor;
 import com.github.rrin.util.CommandType;
+import com.github.rrin.util.RequestData;
 
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -16,7 +17,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class Processor implements IProcessor, Runnable {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final BlockingQueue<DataPacket<?>> inputQueue;
-    private final BlockingQueue<CommandResponse> outputQueue;
+    private final BlockingQueue<RequestData> outputQueue;
     private final AtomicBoolean running = new AtomicBoolean(false);
     private Thread processorThread;
 
@@ -26,7 +27,7 @@ public class Processor implements IProcessor, Runnable {
     private final ConcurrentHashMap<String, Set<String>> productGroups = new ConcurrentHashMap<>();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-    public Processor(BlockingQueue<DataPacket<?>> inputQueue, BlockingQueue<CommandResponse> outputQueue) {
+    public Processor(BlockingQueue<DataPacket<?>> inputQueue, BlockingQueue<RequestData> outputQueue) {
         this.inputQueue = inputQueue;
         this.outputQueue = outputQueue;
     }
@@ -60,7 +61,8 @@ public class Processor implements IProcessor, Runnable {
             try {
                 DataPacket<?> message = inputQueue.take();
                 CommandResponse response = processMessage(message);
-                outputQueue.put(response);
+                RequestData data = new RequestData(message.getSourceId(), message.getPacketId(), message.getBody().getUserId(), response);
+                outputQueue.put(data);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
@@ -100,6 +102,7 @@ public class Processor implements IProcessor, Runnable {
                     CreateProduct p = convertValue(data, CreateProduct.class);
                     yield handleSetPrice(p);
                 }
+                default -> throw new IllegalStateException("Unexpected command type: " + command);
             };
 
         } catch (Exception e) {
