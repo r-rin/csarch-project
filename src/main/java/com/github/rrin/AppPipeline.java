@@ -1,14 +1,7 @@
 package com.github.rrin;
 
-import com.github.rrin.dto.CommandResponse;
-import com.github.rrin.implementation.Decrypter;
-import com.github.rrin.implementation.Encrypter;
-import com.github.rrin.implementation.Processor;
-import com.github.rrin.implementation.UdpReceiver;
-import com.github.rrin.interfaces.IDecrypter;
-import com.github.rrin.interfaces.IEncrypter;
-import com.github.rrin.interfaces.IProcessor;
-import com.github.rrin.interfaces.IReceiver;
+import com.github.rrin.implementation.*;
+import com.github.rrin.interfaces.*;
 import com.github.rrin.util.RequestData;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -25,6 +18,7 @@ public class AppPipeline {
     IDecrypter decrypter;
     IProcessor processor;
     IEncrypter encrypter;
+    ISender sender;
 
     public AppPipeline(int receiverPort) {
         this.rawPacketsQueue = new ArrayBlockingQueue<>(1024);
@@ -36,6 +30,7 @@ public class AppPipeline {
         this.decrypter = new Decrypter(rawPacketsQueue, parsedPacketsQueue);
         this.processor = new Processor(parsedPacketsQueue, responseQueue);
         this.encrypter = new Encrypter(responseQueue, encryptedResponseQueue);
+        this.sender = new MockSender(encryptedResponseQueue);
 
     }
 
@@ -45,6 +40,8 @@ public class AppPipeline {
         receiver.start();
         decrypter.start();
         processor.start();
+        encrypter.start();
+        sender.start();
 
         System.out.println("Pipeline has started successfully");
     }
@@ -55,6 +52,8 @@ public class AppPipeline {
         receiver.stop();
         decrypter.stop();
         processor.stop();
+        encrypter.stop();
+        sender.stop();
 
         System.out.println("Pipeline has stopped successfully");
     }

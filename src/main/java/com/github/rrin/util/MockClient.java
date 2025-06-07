@@ -116,6 +116,7 @@ public class MockClient implements Runnable {
             case ADD_GROUP -> new CreateGroup("Group" + random.nextInt(5));
             case ADD_PRODUCT_TO_GROUP -> new AddProductToGroup("Product" + random.nextInt(10), "Group" + random.nextInt(5));
             case SET_PRICE -> new CreateProduct("Product" + random.nextInt(10), 10.0 + random.nextDouble() * 990.0);
+            case RESPONSE -> new CommandResponse(0, "title", "description");
         };
     }
 }

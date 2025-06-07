@@ -62,10 +62,10 @@ public class Encrypter implements IEncrypter, Runnable {
 
         DataPacket<Object> packet = new DataPacket<>(
                 (byte) 0x13,
-                (byte) 0,
-                0,
+                response.sourceId(),
+                response.packetId(),
                 CommandType.RESPONSE,
-                0,
+                response.userId(),
                 response.response()
         );
 

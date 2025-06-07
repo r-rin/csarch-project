@@ -2,8 +2,6 @@ package com.github.rrin;
 
 import com.github.rrin.util.MockClient;
 
-import java.nio.charset.StandardCharsets;
-
 public class Main {
     public static void main(String[] args) {
         String serverHost = "127.0.0.1";
