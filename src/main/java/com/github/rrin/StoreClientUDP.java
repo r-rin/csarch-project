@@ -77,6 +77,11 @@ public class StoreClientUDP {
         }
     }
 
+    public DataPacket<CommandResponse> isServerRunning() throws Exception {
+        IsRunning request = new IsRunning();
+        return sendRequestAndWait(CommandType.IS_RUNNING, request, DEFAULT_TIMEOUT_SECONDS);
+    }
+
     public DataPacket<CommandResponse> queryQuantity(String productName) throws Exception {
         return queryQuantity(productName, DEFAULT_TIMEOUT_SECONDS);
     }
