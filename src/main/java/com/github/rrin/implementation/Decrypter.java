@@ -1,18 +1,19 @@
 package com.github.rrin.implementation;
 
-import com.github.rrin.DataPacket;
+import com.github.rrin.util.data.DataPacket;
 import com.github.rrin.interfaces.IDecrypter;
+import com.github.rrin.util.data.RawData;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Decrypter implements IDecrypter, Runnable {
-    private final BlockingQueue<byte[]> inputQueue;
-    private final BlockingQueue<DataPacket<?>> outputQueue;
+    private final BlockingQueue<RawData> inputQueue;
+    private final BlockingQueue<DataPacket<Object>> outputQueue;
     private final AtomicBoolean running = new AtomicBoolean(false);
     private Thread decrypterThread;
 
-    public Decrypter(BlockingQueue<byte[]> inputQueue, BlockingQueue<DataPacket<?>> outputQueue) {
+    public Decrypter(BlockingQueue<RawData> inputQueue, BlockingQueue<DataPacket<Object>> outputQueue) {
         this.inputQueue = inputQueue;
         this.outputQueue = outputQueue;
     }
@@ -44,8 +45,8 @@ public class Decrypter implements IDecrypter, Runnable {
     public void run() {
         while (running.get()) {
             try {
-                byte[] rawMessage = inputQueue.take();
-                DataPacket<Object> packet = DataPacket.fromByteArray(rawMessage, Object.class);
+                RawData rawMessage = inputQueue.take();
+                DataPacket<Object> packet = DataPacket.fromByteArray(rawMessage.data, Object.class, rawMessage.connectionId);
                 outputQueue.put(packet);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

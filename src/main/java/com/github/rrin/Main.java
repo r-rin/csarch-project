@@ -1,17 +1,15 @@
 package com.github.rrin;
 
-import com.github.rrin.util.MockClient;
-
 public class Main {
     public static void main(String[] args) {
         String serverHost = "127.0.0.1";
         int serverPort = 5555;
 
-        AppPipeline app = new AppPipeline(serverPort);
-        MockClient client = new MockClient(serverHost, serverPort);
+        StoreServerTCP app = new StoreServerTCP(serverPort);
+        StoreClientTCP client = new StoreClientTCP(serverHost, serverPort);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("\n!!! Stopping test client !!!");
+            System.out.println("\n!!! Stopping everything !!!");
             app.stop();
             client.stop();
         }));
@@ -20,12 +18,18 @@ public class Main {
             app.start();
             client.start();
 
+            client.addGoods("Laptop", 15);
+            client.setPrice("Laptop", 1199.9);
+            client.queryQuantity("Laptop");
+
             while (client.isRunning()) {
                 Thread.sleep(1000);
             }
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         } finally {
             client.stop();
         }

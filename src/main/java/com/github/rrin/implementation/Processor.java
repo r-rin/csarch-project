@@ -1,11 +1,11 @@
 package com.github.rrin.implementation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.rrin.DataPacket;
+import com.github.rrin.util.data.DataPacket;
 import com.github.rrin.dto.*;
 import com.github.rrin.interfaces.IProcessor;
 import com.github.rrin.util.CommandType;
-import com.github.rrin.util.RequestData;
+import com.github.rrin.util.data.RequestData;
 
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -16,7 +16,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Processor implements IProcessor, Runnable {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final BlockingQueue<DataPacket<?>> inputQueue;
+    private final BlockingQueue<DataPacket<Object>> inputQueue;
     private final BlockingQueue<RequestData> outputQueue;
     private final AtomicBoolean running = new AtomicBoolean(false);
     private Thread processorThread;
@@ -27,7 +27,7 @@ public class Processor implements IProcessor, Runnable {
     private final ConcurrentHashMap<String, Set<String>> productGroups = new ConcurrentHashMap<>();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-    public Processor(BlockingQueue<DataPacket<?>> inputQueue, BlockingQueue<RequestData> outputQueue) {
+    public Processor(BlockingQueue<DataPacket<Object>> inputQueue, BlockingQueue<RequestData> outputQueue) {
         this.inputQueue = inputQueue;
         this.outputQueue = outputQueue;
     }
@@ -59,9 +59,9 @@ public class Processor implements IProcessor, Runnable {
     public void run() {
         while (running.get()) {
             try {
-                DataPacket<?> message = inputQueue.take();
+                DataPacket<Object> message = inputQueue.take();
                 CommandResponse response = processMessage(message);
-                RequestData data = new RequestData(message.getSourceId(), message.getPacketId(), message.getBody().getUserId(), response);
+                RequestData data = new RequestData(message.getSourceId(), message.getPacketId(), message.getBody().getUserId(), response, message.getConnectionId());
                 outputQueue.put(data);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -102,6 +102,10 @@ public class Processor implements IProcessor, Runnable {
                     CreateProduct p = convertValue(data, CreateProduct.class);
                     yield handleSetPrice(p);
                 }
+                case IS_RUNNING -> {
+                    IsRunning r = convertValue(data, IsRunning.class);
+                    yield handleIsRunning(r);
+                }
                 default -> throw new IllegalStateException("Unexpected command type: " + command);
             };
 
@@ -109,6 +113,10 @@ public class Processor implements IProcessor, Runnable {
             System.err.println("Error processing message: " + e.getMessage());
             return new CommandResponse(0, "Error", "An error occurred while processing data: " + e.getMessage());
         }
+    }
+
+    private CommandResponse handleIsRunning(IsRunning r) {
+        return new CommandResponse(200, "Success", "The server is running.");
     }
 
     private CommandResponse handleQueryQuantity(Object data) {

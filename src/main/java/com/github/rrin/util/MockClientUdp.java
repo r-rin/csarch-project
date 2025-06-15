@@ -1,8 +1,7 @@
 package com.github.rrin.util;
 
 
-import com.github.rrin.DataPacket;
-import com.github.rrin.Main;
+import com.github.rrin.util.data.DataPacket;
 import com.github.rrin.dto.*;
 
 import java.net.DatagramPacket;
@@ -12,7 +11,7 @@ import java.net.SocketException;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class MockClient implements Runnable {
+public class MockClientUdp implements Runnable {
     private final String serverHost;
     private final int serverPort;
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -20,7 +19,7 @@ public class MockClient implements Runnable {
     private DatagramSocket socket;
     private Thread clientThread;
 
-    public MockClient(String serverHost, int serverPort) {
+    public MockClientUdp(String serverHost, int serverPort) {
         this.serverHost = serverHost;
         this.serverPort = serverPort;
     }
@@ -74,9 +73,9 @@ public class MockClient implements Runnable {
                 );
 
                 socket.send(udpPacket);
-                System.out.println("Sent packet " + packet.getPacketId() + " with command " +
+                System.out.println("[CLIENT] Sent packet " + packet.getPacketId() + " with command " +
                         packet.getBody().getCommand() + " (" + packetBytes.length + " bytes)");
-                System.out.println("Sent data: " + Converter.bytesToHex(packetBytes));
+                System.out.println("[CLIENT] Sent data: " + Converter.bytesToHex(packetBytes));
 
                 // Wait random time before next mocked packet
                 Thread.sleep(1000 + random.nextInt(5000));
@@ -85,7 +84,7 @@ public class MockClient implements Runnable {
                 Thread.currentThread().interrupt();
                 break;
             } catch (Exception e) {
-                System.err.println("Error sending packet: " + e.getMessage());
+                System.err.println("[CLIENT] Error sending packet: " + e.getMessage());
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException ie) {
@@ -105,7 +104,7 @@ public class MockClient implements Runnable {
 
         Object data = generateRandomData(randomCommand);
 
-        return new DataPacket<>((byte) 0x13, sourceId, packetId, randomCommand, userId, data);
+        return new DataPacket<>((byte) 0x13, sourceId, packetId, randomCommand, userId, data, 0);
     }
 
     private Object generateRandomData(CommandType command) {
@@ -117,6 +116,7 @@ public class MockClient implements Runnable {
             case ADD_PRODUCT_TO_GROUP -> new AddProductToGroup("Product" + random.nextInt(10), "Group" + random.nextInt(5));
             case SET_PRICE -> new CreateProduct("Product" + random.nextInt(10), 10.0 + random.nextDouble() * 990.0);
             case RESPONSE -> new CommandResponse(0, "title", "description");
+            case IS_RUNNING -> new IsRunning();
         };
     }
 }
