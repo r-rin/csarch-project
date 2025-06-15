@@ -73,9 +73,9 @@ public class MockClientUdp implements Runnable {
                 );
 
                 socket.send(udpPacket);
-                System.out.println("Sent packet " + packet.getPacketId() + " with command " +
+                System.out.println("[CLIENT] Sent packet " + packet.getPacketId() + " with command " +
                         packet.getBody().getCommand() + " (" + packetBytes.length + " bytes)");
-                System.out.println("Sent data: " + Converter.bytesToHex(packetBytes));
+                System.out.println("[CLIENT] Sent data: " + Converter.bytesToHex(packetBytes));
 
                 // Wait random time before next mocked packet
                 Thread.sleep(1000 + random.nextInt(5000));
@@ -84,7 +84,7 @@ public class MockClientUdp implements Runnable {
                 Thread.currentThread().interrupt();
                 break;
             } catch (Exception e) {
-                System.err.println("Error sending packet: " + e.getMessage());
+                System.err.println("[CLIENT] Error sending packet: " + e.getMessage());
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException ie) {

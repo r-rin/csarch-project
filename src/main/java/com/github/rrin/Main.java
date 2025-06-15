@@ -1,5 +1,6 @@
 package com.github.rrin;
 
+import com.github.rrin.implementation.udp.UdpReceiver;
 import com.github.rrin.util.MockClientUdp;
 
 public class Main {
@@ -7,7 +8,7 @@ public class Main {
         String serverHost = "127.0.0.1";
         int serverPort = 5555;
 
-        AppPipeline app = new AppPipeline(serverPort);
+        StoreServerUDP app = new StoreServerUDP(serverPort);
         MockClientUdp client = new MockClientUdp(serverHost, serverPort);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

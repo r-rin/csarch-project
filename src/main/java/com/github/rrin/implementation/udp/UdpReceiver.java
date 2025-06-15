@@ -1,55 +1,61 @@
-package com.github.rrin.implementation;
+package com.github.rrin.implementation.udp;
 
-import com.github.rrin.Main;
+import com.github.rrin.interfaces.IConnectionManager;
 import com.github.rrin.interfaces.IReceiver;
 import com.github.rrin.util.Converter;
+import com.github.rrin.util.data.RawData;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
+import java.io.InputStream;
+import java.net.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class UdpReceiver implements IReceiver, Runnable {
-    private final BlockingQueue<byte[]> outputQueue;
-    private final AtomicBoolean running = new AtomicBoolean(false);
-    private final int port;
-    private DatagramSocket socket;
-    private Thread receiverThread;
 
-    public UdpReceiver(BlockingQueue<byte[]> outputQueue, int port) {
+    private final BlockingQueue<RawData> outputQueue;
+    private final AtomicBoolean running = new AtomicBoolean(false);
+    private final IConnectionManager<DatagramPacket> packetManager;
+
+    private final DatagramSocket socket;
+    private Thread receiverThread;
+    private ExecutorService clientHandlersPool;
+
+    public UdpReceiver(BlockingQueue<RawData> outputQueue, IConnectionManager<DatagramPacket> packetManager, DatagramSocket socket) {
         this.outputQueue = outputQueue;
-        this.port = port;
+        this.socket = socket;
+        this.packetManager = packetManager;
     }
 
     @Override
     public void start() {
         if (running.compareAndSet(false, true)) {
-            try {
-                socket = new DatagramSocket(port);
-                //socket.setSoTimeout(1000);
-                receiverThread = new Thread(this, "UDPReceiver");
-                receiverThread.start();
-                System.out.println("UDPReceiver started on port " + port);
-            } catch (SocketException e) {
-                running.set(false);
-                throw new RuntimeException("Failed to start UDPReceiver", e);
-            }
+            clientHandlersPool = Executors.newCachedThreadPool();
+            receiverThread = new Thread(this, "UdpReceiver");
+            receiverThread.start();
         }
     }
 
     @Override
     public void stop() {
-        running.set(false);
-        if (socket != null && !socket.isClosed()) {
-            socket.close();
+        if (running.compareAndSet(true, false)) {
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
+
+            clientHandlersPool.shutdownNow();
+            packetManager.closeAll();
+
+            try {
+                if (receiverThread != null) {
+                    receiverThread.join();
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
-        if (receiverThread != null) {
-            receiverThread.interrupt();
-        }
-        System.out.println("UDPReceiver stopped");
     }
 
     @Override
@@ -66,13 +72,15 @@ public class UdpReceiver implements IReceiver, Runnable {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
 
+                long id = packetManager.register(packet);
+
                 // Extract the actual data from the packet
                 byte[] receivedData = new byte[packet.getLength()];
                 System.arraycopy(packet.getData(), packet.getOffset(), receivedData, 0, packet.getLength());
 
                 System.out.println("Received packet from " + packet.getAddress() + ":" + packet.getPort() + " (" + receivedData.length + " bytes)");
                 System.out.println("Data received: " + Converter.bytesToHex(receivedData));
-                outputQueue.put(receivedData);
+                outputQueue.put(new RawData(receivedData, id));
 
             } catch (SocketTimeoutException ignored) {
             } catch (IOException e) {
