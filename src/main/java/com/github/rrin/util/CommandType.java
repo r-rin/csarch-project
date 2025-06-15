@@ -7,7 +7,8 @@ public enum CommandType {
     ADD_GROUP(4),
     ADD_PRODUCT_TO_GROUP(5),
     SET_PRICE(6),
-    RESPONSE(7);
+    RESPONSE(7),
+    IS_RUNNING(8);
 
     private final int code;
 

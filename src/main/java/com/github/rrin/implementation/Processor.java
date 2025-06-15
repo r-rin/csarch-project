@@ -102,6 +102,10 @@ public class Processor implements IProcessor, Runnable {
                     CreateProduct p = convertValue(data, CreateProduct.class);
                     yield handleSetPrice(p);
                 }
+                case IS_RUNNING -> {
+                    IsRunning r = convertValue(data, IsRunning.class);
+                    yield handleIsRunning(r);
+                }
                 default -> throw new IllegalStateException("Unexpected command type: " + command);
             };
 
@@ -109,6 +113,10 @@ public class Processor implements IProcessor, Runnable {
             System.err.println("Error processing message: " + e.getMessage());
             return new CommandResponse(0, "Error", "An error occurred while processing data: " + e.getMessage());
         }
+    }
+
+    private CommandResponse handleIsRunning(IsRunning r) {
+        return new CommandResponse(200, "Success", "The server is running.");
     }
 
     private CommandResponse handleQueryQuantity(Object data) {
