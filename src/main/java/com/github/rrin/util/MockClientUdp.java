@@ -1,8 +1,7 @@
 package com.github.rrin.util;
 
 
-import com.github.rrin.DataPacket;
-import com.github.rrin.Main;
+import com.github.rrin.util.data.DataPacket;
 import com.github.rrin.dto.*;
 
 import java.net.DatagramPacket;
@@ -12,7 +11,7 @@ import java.net.SocketException;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class MockClient implements Runnable {
+public class MockClientUdp implements Runnable {
     private final String serverHost;
     private final int serverPort;
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -20,7 +19,7 @@ public class MockClient implements Runnable {
     private DatagramSocket socket;
     private Thread clientThread;
 
-    public MockClient(String serverHost, int serverPort) {
+    public MockClientUdp(String serverHost, int serverPort) {
         this.serverHost = serverHost;
         this.serverPort = serverPort;
     }
@@ -105,7 +104,7 @@ public class MockClient implements Runnable {
 
         Object data = generateRandomData(randomCommand);
 
-        return new DataPacket<>((byte) 0x13, sourceId, packetId, randomCommand, userId, data);
+        return new DataPacket<>((byte) 0x13, sourceId, packetId, randomCommand, userId, data, 0);
     }
 
     private Object generateRandomData(CommandType command) {

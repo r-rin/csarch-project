@@ -17,7 +17,7 @@ Offset	Length	Mnemonic 	Notes
 08	    wLen-8	message     корисна інформація, можна покласти JSON як масив байтів big-endian
 */
 
-package com.github.rrin;
+package com.github.rrin.util.data;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,6 +34,7 @@ import java.util.Objects;
 public class DataPacket<T> {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    private final long connectionId;
 
     private final byte magicByte;
     private final byte sourceId;
@@ -43,9 +44,10 @@ public class DataPacket<T> {
     private final PacketBody<T> body;
     private final short bodyChecksum;
 
-    public DataPacket(byte magicByte, byte sourceId, long packetId, CommandType command, int userId, T data) {
+    public DataPacket(byte magicByte, byte sourceId, long packetId, CommandType command, int userId, T data, long connectionId) {
         this.body = new PacketBody<>(command, userId, data);
 
+        this.connectionId = connectionId;
         this.magicByte = magicByte;
         this.sourceId = sourceId;
         this.packetId = packetId;
@@ -59,6 +61,10 @@ public class DataPacket<T> {
 
         this.headerChecksum = CRC16.sum(headerBuffer.array());
         this.bodyChecksum = CRC16.sum(body.toByteArray());
+    }
+
+    public long getConnectionId() {
+        return connectionId;
     }
 
     public byte getMagicByte() {
@@ -89,7 +95,7 @@ public class DataPacket<T> {
         return bodyChecksum;
     }
 
-    public static <T> DataPacket<T> fromByteArray(byte[] data, Class<T> dataClass) {
+    public static <T> DataPacket<T> fromByteArray(byte[] data, Class<T> dataClass, long connectionId) {
         ByteBuffer buffer = ByteBuffer.wrap(data).order(ByteOrder.BIG_ENDIAN);
 
         byte magicByte = buffer.get();
@@ -116,7 +122,7 @@ public class DataPacket<T> {
         try {
             message = DataEncryption.decrypt(message);
             T dataObject = objectMapper.readValue(message, dataClass);
-            return new DataPacket<>(magicByte, sourceId, packetId, CommandType.fromCode(commandType), userId, dataObject);
+            return new DataPacket<>(magicByte, sourceId, packetId, CommandType.fromCode(commandType), userId, dataObject, connectionId);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

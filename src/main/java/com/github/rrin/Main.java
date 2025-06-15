@@ -1,6 +1,6 @@
 package com.github.rrin;
 
-import com.github.rrin.util.MockClient;
+import com.github.rrin.util.MockClientUdp;
 
 public class Main {
     public static void main(String[] args) {
@@ -8,7 +8,7 @@ public class Main {
         int serverPort = 5555;
 
         AppPipeline app = new AppPipeline(serverPort);
-        MockClient client = new MockClient(serverHost, serverPort);
+        MockClientUdp client = new MockClientUdp(serverHost, serverPort);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\n!!! Stopping test client !!!");

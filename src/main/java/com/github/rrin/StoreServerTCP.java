@@ -1,41 +1,44 @@
 package com.github.rrin;
 
 import com.github.rrin.implementation.*;
+import com.github.rrin.implementation.tcp.TcpReceiver;
+import com.github.rrin.implementation.tcp.TcpSender;
+import com.github.rrin.implementation.tcp.TcpSocketManager;
 import com.github.rrin.interfaces.*;
-import com.github.rrin.util.RequestData;
+import com.github.rrin.util.data.*;
 
+import java.net.Socket;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-public class AppPipeline {
-    private final BlockingQueue<byte[]> rawPacketsQueue;
-    private final BlockingQueue<DataPacket<?>> parsedPacketsQueue;
+public class StoreServerTCP {
+    private final BlockingQueue<RawData> rawPacketsQueue;
+    private final BlockingQueue<DataPacket<Object>> parsedPacketsQueue;
     private final BlockingQueue<RequestData> responseQueue;
-    private final BlockingQueue<byte[]> encryptedResponseQueue;
+    private final BlockingQueue<RawData> encryptedResponseQueue;
+    private final IConnectionManager<Socket> socketManager = new TcpSocketManager();
 
-    // Pipeline components
     IReceiver receiver;
     IDecrypter decrypter;
     IProcessor processor;
     IEncrypter encrypter;
     ISender sender;
 
-    public AppPipeline(int receiverPort) {
+    public StoreServerTCP(int receiverPort) {
         this.rawPacketsQueue = new ArrayBlockingQueue<>(1024);
         this.parsedPacketsQueue = new ArrayBlockingQueue<>(1024);
         this.responseQueue = new ArrayBlockingQueue<>(1024);
         this.encryptedResponseQueue = new ArrayBlockingQueue<>(1024);
 
-        this.receiver = new UdpReceiver(rawPacketsQueue, receiverPort);
+        this.receiver = new TcpReceiver(rawPacketsQueue, receiverPort, socketManager);
         this.decrypter = new Decrypter(rawPacketsQueue, parsedPacketsQueue);
         this.processor = new Processor(parsedPacketsQueue, responseQueue);
         this.encrypter = new Encrypter(responseQueue, encryptedResponseQueue);
-        this.sender = new MockSender(encryptedResponseQueue);
-
+        this.sender = new TcpSender(encryptedResponseQueue, socketManager);
     }
 
     public void start() {
-        System.out.println("App pipeline is starting...");
+        System.out.println("Store TCP server is starting...");
 
         receiver.start();
         decrypter.start();
@@ -43,11 +46,11 @@ public class AppPipeline {
         encrypter.start();
         sender.start();
 
-        System.out.println("Pipeline has started successfully");
+        System.out.println("Store TCP server has started successfully");
     }
 
     public void stop() {
-        System.out.println("Stopping app pipeline...");
+        System.out.println("Stopping store TCP server...");
 
         receiver.stop();
         decrypter.stop();
@@ -55,6 +58,6 @@ public class AppPipeline {
         encrypter.stop();
         sender.stop();
 
-        System.out.println("Pipeline has stopped successfully");
+        System.out.println("Store TCP server has stopped successfully");
     }
 }

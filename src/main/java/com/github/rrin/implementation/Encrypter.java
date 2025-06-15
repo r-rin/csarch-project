@@ -1,20 +1,21 @@
 package com.github.rrin.implementation;
 
-import com.github.rrin.DataPacket;
+import com.github.rrin.util.data.DataPacket;
 import com.github.rrin.interfaces.IEncrypter;
 import com.github.rrin.util.CommandType;
-import com.github.rrin.util.RequestData;
+import com.github.rrin.util.data.RawData;
+import com.github.rrin.util.data.RequestData;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Encrypter implements IEncrypter, Runnable {
     private final BlockingQueue<RequestData> inputQueue;
-    private final BlockingQueue<byte[]> outputQueue;
+    private final BlockingQueue<RawData> outputQueue;
     private final AtomicBoolean running = new AtomicBoolean(false);
     private Thread encrypterThread;
 
-    public Encrypter(BlockingQueue<RequestData> inputQueue, BlockingQueue<byte[]> outputQueue) {
+    public Encrypter(BlockingQueue<RequestData> inputQueue, BlockingQueue<RawData> outputQueue) {
         this.inputQueue = inputQueue;
         this.outputQueue = outputQueue;
     }
@@ -48,7 +49,7 @@ public class Encrypter implements IEncrypter, Runnable {
             try {
                 RequestData response = inputQueue.take();
                 byte[] encryptedResponse = encryptResponse(response);
-                outputQueue.put(encryptedResponse);
+                outputQueue.put(new RawData(encryptedResponse, response.getConnectionId()));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
@@ -62,11 +63,12 @@ public class Encrypter implements IEncrypter, Runnable {
 
         DataPacket<Object> packet = new DataPacket<>(
                 (byte) 0x13,
-                response.sourceId(),
-                response.packetId(),
+                response.getSourceId(),
+                response.getPacketId(),
                 CommandType.RESPONSE,
-                response.userId(),
-                response.response()
+                response.getUserId(),
+                response.getResponse(),
+                0
         );
 
         return packet.toByteArray();

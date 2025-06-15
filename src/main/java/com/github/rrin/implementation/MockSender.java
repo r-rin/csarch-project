@@ -1,6 +1,6 @@
 package com.github.rrin.implementation;
 
-import com.github.rrin.DataPacket;
+import com.github.rrin.util.data.DataPacket;
 import com.github.rrin.interfaces.ISender;
 
 import java.util.concurrent.BlockingQueue;
