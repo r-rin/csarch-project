@@ -79,7 +79,7 @@ public class TcpReceiver implements IReceiver, Runnable {
                 clientHandlersPool.submit(() -> createClientConnection(clientSocket, connId));
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println("TcpReceiver failed to listen on port " + port);
         } finally {
             running.set(false);
         }

@@ -5,8 +5,8 @@ public class Main {
         String serverHost = "127.0.0.1";
         int serverPort = 5555;
 
-        StoreServerUDP app = new StoreServerUDP(serverPort);
-        StoreClientUDP client = new StoreClientUDP(serverHost, serverPort);
+        StoreServerTCP app = new StoreServerTCP(serverPort);
+        StoreClientTCP client = new StoreClientTCP(serverHost, serverPort);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\n!!! Stopping everything !!!");
