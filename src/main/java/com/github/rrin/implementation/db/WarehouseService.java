@@ -34,6 +34,15 @@ public class WarehouseService implements Closeable {
         }
     }
 
+    public WarehouseService(MySQLOptions options) throws SQLException {
+        try {
+            databaseManager = new MySQLManager(options);
+            init();
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void init() throws SQLException {
         String createProductsTable = """
                 CREATE TABLE IF NOT EXISTS products (
@@ -495,7 +504,7 @@ public class WarehouseService implements Closeable {
             if (res.next()) {
                 String name = res.getString("name");
                 int quantity = res.getInt("quantity");
-                int price = res.getInt("value");
+                double price = res.getDouble("value");
 
                 return new Product(id, name, price, quantity);
             }
