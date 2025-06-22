@@ -1,3 +1,3 @@
-package com.github.rrin.dto;
+package com.github.rrin.dto.group;
 
 public record CreateGroup(String groupName) {}

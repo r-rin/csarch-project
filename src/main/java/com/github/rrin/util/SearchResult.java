@@ -37,4 +37,24 @@ public class SearchResult<T> {
     public int getTotalPages() {
         return totalPages;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Search result:\n");
+        sb.append(" - Total Count: ").append(totalCount).append("\n");
+        sb.append(" - Current Page: ").append(currentPage).append(" of ").append(totalPages).append("\n");
+        sb.append(" - Page Size: ").append(pageSize).append("\n");
+        sb.append(" - Items:\n");
+
+        if (items.isEmpty()) {
+            sb.append("   (No items found)\n");
+        } else {
+            for (int i = 0; i < items.size(); i++) {
+                sb.append("   ").append(i + 1).append(". ").append(items.get(i).toString()).append("\n");
+            }
+        }
+
+        return sb.toString().trim();
+    }
 }
