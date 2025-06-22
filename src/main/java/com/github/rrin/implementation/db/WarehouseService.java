@@ -7,12 +7,16 @@ import com.github.rrin.util.MySQLOptions;
 import com.github.rrin.util.ProductSearchFilters;
 import com.github.rrin.util.SearchResult;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class WarehouseService {
+public class WarehouseService implements Closeable {
 
     IDatabaseManager databaseManager;
 
@@ -165,9 +169,9 @@ public class WarehouseService {
 
     public int createProduct(String name, double price, int quantity) {
         String insertProductSQL = "INSERT INTO products (name, value, quantity) VALUES (?, ?, ?)";
-        try (var connection = databaseManager.getConnection();
-             var ps = connection.prepareStatement(insertProductSQL, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+        Connection connection = databaseManager.getConnection();
 
+        try (PreparedStatement ps = connection.prepareStatement(insertProductSQL, java.sql.Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, name);
             ps.setDouble(2, price);
             ps.setInt(3, quantity);
@@ -192,10 +196,10 @@ public class WarehouseService {
     }
 
     public int createGroup(String name) {
-        String insertProductSQL = "INSERT INTO goods_groups (name) VALUES (?)";
-        try (var connection = databaseManager.getConnection();
-             var ps = connection.prepareStatement(insertProductSQL, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+        String insertGroupsSQL = "INSERT INTO goods_groups (name) VALUES (?)";
+        Connection connection = databaseManager.getConnection();
 
+        try (PreparedStatement ps = connection.prepareStatement(insertGroupsSQL, java.sql.Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, name);
             int affectedRows = ps.executeUpdate();
 
@@ -534,5 +538,10 @@ public class WarehouseService {
             e.printStackTrace();
         }
         return false;
+    }
+
+    @Override
+    public void close() throws IOException {
+        databaseManager.close();
     }
 }

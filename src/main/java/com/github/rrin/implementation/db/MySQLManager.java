@@ -3,10 +3,12 @@ package com.github.rrin.implementation.db;
 import com.github.rrin.interfaces.IDatabaseManager;
 import com.github.rrin.util.MySQLOptions;
 
+import java.io.IOException;
 import java.sql.*;
 
 public class MySQLManager implements IDatabaseManager {
 
+    Connection connection;
     MySQLOptions options;
 
     public MySQLManager(MySQLOptions options) {
@@ -17,20 +19,23 @@ public class MySQLManager implements IDatabaseManager {
     private void connect(MySQLOptions options) {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
+            this.connection = DriverManager.getConnection(options.url(), options.user(), options.password());
         } catch (ClassNotFoundException e) {
             System.err.println("MySQL JDBC Driver not found");
+        } catch (SQLException e) {
+            System.err.println("MySQL connection failed");
         }
     }
 
     @Override
     public ResultSet query(String sql) throws SQLException {
-        Statement statement = getConnection().createStatement();
+        Statement statement = this.connection.createStatement();
         return statement.executeQuery(sql);
     }
 
     @Override
     public ResultSet query(String preparedString, Object... objects) throws SQLException {
-        PreparedStatement preparedStatement = getConnection().prepareStatement(preparedString);
+        PreparedStatement preparedStatement = this.connection.prepareStatement(preparedString);
         for (int i = 0; i < objects.length; i++) {
             preparedStatement.setObject(i + 1, objects[i]);
         }
@@ -40,13 +45,13 @@ public class MySQLManager implements IDatabaseManager {
 
     @Override
     public int update(String sql) throws SQLException {
-        Statement statement = getConnection().createStatement();
+        Statement statement = this.connection.createStatement();
         return statement.executeUpdate(sql);
     }
 
     @Override
     public int update(String preparedString, Object... objects) throws SQLException {
-        PreparedStatement preparedStatement = getConnection().prepareStatement(preparedString);
+        PreparedStatement preparedStatement = this.connection.prepareStatement(preparedString);
         for (int i = 0; i < objects.length; i++) {
             preparedStatement.setObject(i + 1, objects[i]);
         }
@@ -56,9 +61,15 @@ public class MySQLManager implements IDatabaseManager {
 
     @Override
     public Connection getConnection() {
+        return connection;
+    }
+
+    @Override
+    public void close() throws IOException {
         try {
-            Connection connection = DriverManager.getConnection(options.url(), options.user(), options.password());
-            return connection;
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

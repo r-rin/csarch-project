@@ -13,6 +13,7 @@ import com.github.rrin.util.SearchResult;
 import com.github.rrin.util.data.DataPacket;
 import com.github.rrin.util.data.RequestData;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -52,6 +53,11 @@ public class MySQLProductProcessor implements IProcessor, Runnable {
     @Override
     public void stop() {
         running.set(false);
+        try {
+            warehouseService.close();
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        }
         if (processorThread != null) {
             processorThread.interrupt();
         }
