@@ -8,8 +8,10 @@ import java.sql.*;
 public class MySQLManager implements IDatabaseManager {
 
     Connection connection;
+    MySQLOptions options;
 
     public MySQLManager(MySQLOptions options) {
+        this.options = options;
         connect(options);
     }
 
@@ -21,6 +23,7 @@ public class MySQLManager implements IDatabaseManager {
         } catch (ClassNotFoundException e) {
             System.err.println("MySQL JDBC Driver not found");
         } catch (SQLException e) {
+            e.printStackTrace();
             System.err.println("MySQL connection failed");
         }
     }

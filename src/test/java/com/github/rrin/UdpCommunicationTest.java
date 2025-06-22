@@ -17,13 +17,14 @@ public class UdpCommunicationTest {
     private StoreServerUDP udpServer;
 
     @BeforeEach
-    void setUp() throws InterruptedException {
+    void setUp() throws Exception {
         udpServer = new StoreServerUDP(UDP_PORT);
         udpClient = new StoreClientUDP(SERVER_HOST, UDP_PORT);
 
         udpServer.start();
         Thread.sleep(1000);
         udpClient.start();
+        udpClient.clearDatabase();
         Thread.sleep(1000);
     }
 
@@ -49,7 +50,7 @@ public class UdpCommunicationTest {
 
     @Test
     void testTcpAddGoods() throws Exception {
-        DataPacket<CommandResponse> response = udpClient.addGoods("TestProductUDP", 10, TEST_TIMEOUT);
+        DataPacket<CommandResponse> response = udpClient.createProduct("TestProductUDP", 10, 10, TEST_TIMEOUT);
 
         assertNotNull(response, "Response should not be null");
         assertNotNull(response.getBody(), "Response body should not be null");
@@ -59,7 +60,7 @@ public class UdpCommunicationTest {
         assert(commandResponse.title().equals("Success!"));
         assert(commandResponse.message().equals("Added 10 of TestProductUDP. New quantity: 10"));
 
-        response = udpClient.addGoods("TestProductUDP", 30, TEST_TIMEOUT);
+        response = udpClient.updateProduct(1, null, null, 40, TEST_TIMEOUT);
         commandResponse = response.getBody().getData();
         assert(commandResponse.title().equals("Success!"));
         assert(commandResponse.message().equals("Added 30 of TestProductUDP. New quantity: 40"));

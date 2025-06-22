@@ -19,8 +19,8 @@ public class WarehouseService {
     public WarehouseService() throws SQLException {
         MySQLOptions options = new MySQLOptions(
                 "jdbc:mysql://localhost:3306/products_warehouse",
-                "root",
-                "rootpass"
+                "warehouse_user",
+                "warehouse_pass"
         );
         databaseManager = new MySQLManager(options);
         init();
@@ -37,7 +37,7 @@ public class WarehouseService {
                 """;
 
         String createGroupsTable = """
-                    CREATE TABLE IF NOT EXISTS groups (
+                    CREATE TABLE IF NOT EXISTS goods_groups (
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         name VARCHAR(255) UNIQUE NOT NULL
                     );
@@ -48,7 +48,7 @@ public class WarehouseService {
                         group_id INT NOT NULL,
                         product_id INT NOT NULL,
                         PRIMARY KEY (group_id, product_id),
-                        FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+                        FOREIGN KEY (group_id) REFERENCES goods_groups(id) ON DELETE CASCADE,
                         FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
                     );
                 """;
@@ -58,6 +58,21 @@ public class WarehouseService {
         databaseManager.update(createGroupProductsTable);
 
         System.out.println("Database initialized.");
+    }
+
+    public void clearDB() {
+        try {
+            databaseManager.update("DELETE FROM group_products");
+            databaseManager.update("DELETE FROM goods_groups");
+            databaseManager.update("DELETE FROM products");
+
+            databaseManager.update("ALTER TABLE products AUTO_INCREMENT = 1");
+            databaseManager.update("ALTER TABLE goods_groups AUTO_INCREMENT = 1");
+
+            System.out.println("Database cleared.");
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to clear database", e);
+        }
     }
 
     public SearchResult<Product> searchProducts(ProductSearchFilters filters) {
@@ -177,7 +192,7 @@ public class WarehouseService {
     }
 
     public int createGroup(String name) {
-        String insertProductSQL = "INSERT INTO groups (name) VALUES (?)";
+        String insertProductSQL = "INSERT INTO goods_groups (name) VALUES (?)";
         try (var connection = databaseManager.getConnection();
              var ps = connection.prepareStatement(insertProductSQL, java.sql.Statement.RETURN_GENERATED_KEYS)) {
 
@@ -260,7 +275,7 @@ public class WarehouseService {
         boolean groupExist = doGroupExist(id);
         if (!groupExist) {return false;}
 
-        String query = "UPDATE groups SET name = ? WHERE id = ?";
+        String query = "UPDATE goods_groups SET name = ? WHERE id = ?";
 
         try {
             int res = databaseManager.update(query, name, id);
@@ -349,7 +364,7 @@ public class WarehouseService {
         if (!groupExist) {return null;}
 
         Group group = getGroup(id);
-        String query = "DELETE FROM groups WHERE id = ?";
+        String query = "DELETE FROM goods_groups WHERE id = ?";
 
         try {
             int res = databaseManager.update(query, id);
@@ -367,7 +382,7 @@ public class WarehouseService {
     public List<Group> getGroups() {
         List<Group> groups = new ArrayList<>();
 
-        String query = "SELECT * FROM groups";
+        String query = "SELECT * FROM goods_groups";
 
         try {
             ResultSet res = databaseManager.query(query);
@@ -411,7 +426,7 @@ public class WarehouseService {
     }
 
     public Group getGroup(int id) {
-        String query = "SELECT * FROM groups WHERE id = ?";
+        String query = "SELECT * FROM goods_groups WHERE id = ?";
 
         try (ResultSet res = databaseManager.query(query, id)) {
             if (res.next()) {
@@ -496,7 +511,7 @@ public class WarehouseService {
     }
 
     public boolean doGroupExist(int groupId) {
-        String query = "SELECT COUNT(*) FROM groups WHERE id = ?";
+        String query = "SELECT COUNT(*) FROM goods_groups WHERE id = ?";
         try (ResultSet res = databaseManager.query(query, groupId)) {
             if (res.next()) {
                 return res.getInt(1) > 0;
@@ -511,12 +526,13 @@ public class WarehouseService {
         String query = "SELECT COUNT(*) FROM products WHERE id = ?";
         try (ResultSet res = databaseManager.query(query, productId)) {
             if (res.next()) {
-                return res.getInt(1) > 0;
+                boolean result = res.getInt(1) > 0;
+                res.close();
+                return result;
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return false;
     }
-
 }
