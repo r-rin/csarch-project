@@ -19,18 +19,19 @@ public class TcpCommunicationTest {
     private StoreServerTCP tcpServer;
 
     @BeforeEach
-    void setUp() throws InterruptedException {
+    void setUp() throws Exception {
         tcpServer = new StoreServerTCP(TCP_PORT);
         tcpClient = new StoreClientTCP(SERVER_HOST, TCP_PORT);
 
         tcpServer.start();
         Thread.sleep(1000);
         tcpClient.start();
+        tcpClient.clearDatabase();
         Thread.sleep(1000);
     }
 
     @AfterEach
-    void tearDown() throws InterruptedException {
+    void tearDown() throws Exception {
         if (tcpClient != null) {
             tcpClient.stop();
         }
@@ -50,19 +51,19 @@ public class TcpCommunicationTest {
 
     @Test
     void testTcpAddGoods() throws Exception {
-        DataPacket<CommandResponse> response = tcpClient.addGoods("TestProduct", 10, TEST_TIMEOUT);
+        DataPacket<CommandResponse> response = tcpClient.createProduct("TestProduct", 10, 10, TEST_TIMEOUT);
 
         assertNotNull(response, "Response should not be null");
         assertNotNull(response.getBody(), "Response body should not be null");
         assertNotNull(response.getBody().getData(), "Response data should not be null");
 
         CommandResponse commandResponse = response.getBody().getData();
-        assert(commandResponse.title().equals("Success!"));
-        assert(commandResponse.message().equals("Added 10 of TestProduct. New quantity: 10"));
+        assert(commandResponse.title().equals("Created"));
+        assert(commandResponse.message().equals("Created product: TestProduct (ID: 1)"));
 
-        response = tcpClient.addGoods("TestProduct", 30, TEST_TIMEOUT);
+        response = tcpClient.updateProduct(1, null, null, 40, TEST_TIMEOUT);
         commandResponse = response.getBody().getData();
-        assert(commandResponse.title().equals("Success!"));
-        assert(commandResponse.message().equals("Added 30 of TestProduct. New quantity: 40"));
+        assert(commandResponse.title().equals("Success"));
+        assert(commandResponse.message().equals("Updated product (ID: 1): quantity=40 \n - ID: 1, Name: TestProduct, Value: 10.0, Quantity: 40\n"));
     }
 }

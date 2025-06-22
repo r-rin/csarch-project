@@ -2,10 +2,7 @@ package com.github.rrin;
 
 import com.github.rrin.implementation.Decrypter;
 import com.github.rrin.implementation.Encrypter;
-import com.github.rrin.implementation.Processor;
-import com.github.rrin.implementation.tcp.TcpReceiver;
-import com.github.rrin.implementation.tcp.TcpSender;
-import com.github.rrin.implementation.tcp.TcpSocketManager;
+import com.github.rrin.implementation.MySQLProductProcessor;
 import com.github.rrin.implementation.udp.UdpReceiver;
 import com.github.rrin.implementation.udp.UdpSender;
 import com.github.rrin.implementation.udp.UdpSocketManager;
@@ -51,7 +48,7 @@ public class StoreServerUDP {
 
         this.receiver = new UdpReceiver(rawPacketsQueue, socketManager, socket);
         this.decrypter = new Decrypter(rawPacketsQueue, parsedPacketsQueue);
-        this.processor = new Processor(parsedPacketsQueue, responseQueue);
+        this.processor = new MySQLProductProcessor(parsedPacketsQueue, responseQueue);
         this.encrypter = new Encrypter(responseQueue, encryptedResponseQueue);
         this.sender = new UdpSender(encryptedResponseQueue, socketManager, socket);
     }

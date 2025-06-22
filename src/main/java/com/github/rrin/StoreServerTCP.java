@@ -32,7 +32,7 @@ public class StoreServerTCP {
 
         this.receiver = new TcpReceiver(rawPacketsQueue, receiverPort, socketManager);
         this.decrypter = new Decrypter(rawPacketsQueue, parsedPacketsQueue);
-        this.processor = new Processor(parsedPacketsQueue, responseQueue);
+        this.processor = new MySQLProductProcessor(parsedPacketsQueue, responseQueue);
         this.encrypter = new Encrypter(responseQueue, encryptedResponseQueue);
         this.sender = new TcpSender(encryptedResponseQueue, socketManager);
     }

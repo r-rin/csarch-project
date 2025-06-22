@@ -1,6 +1,9 @@
 package com.github.rrin;
 
 import com.github.rrin.dto.*;
+import com.github.rrin.dto.AddProductToGroup;
+import com.github.rrin.dto.group.*;
+import com.github.rrin.dto.product.*;
 import com.github.rrin.util.CommandType;
 import com.github.rrin.util.Converter;
 import com.github.rrin.util.data.DataPacket;
@@ -77,63 +80,160 @@ public class StoreClientUDP {
         }
     }
 
-    public DataPacket<CommandResponse> isServerRunning() throws Exception {
-        IsRunning request = new IsRunning();
-        return sendRequestAndWait(CommandType.IS_RUNNING, request, DEFAULT_TIMEOUT_SECONDS);
+    // Product operations
+    public DataPacket<CommandResponse> createProduct(String name, double price, int quantity) throws Exception {
+        return createProduct(name, price, quantity, DEFAULT_TIMEOUT_SECONDS);
     }
 
-    public DataPacket<CommandResponse> queryQuantity(String productName) throws Exception {
-        return queryQuantity(productName, DEFAULT_TIMEOUT_SECONDS);
+    public DataPacket<CommandResponse> createProduct(String name, double price, int quantity, int timeoutSeconds) throws Exception {
+        CreateProduct request = new CreateProduct(name, price, quantity);
+        return sendRequestAndWait(CommandType.CREATE_PRODUCT, request, timeoutSeconds);
     }
 
-    public DataPacket<CommandResponse> addGoods(String productName, int quantity) throws Exception {
-        return addGoods(productName, quantity, DEFAULT_TIMEOUT_SECONDS);
+    public DataPacket<CommandResponse> getProduct(int id) throws Exception {
+        return getProduct(id, DEFAULT_TIMEOUT_SECONDS);
     }
 
-    public DataPacket<CommandResponse> removeGoods(String productName, int quantity) throws Exception {
-        return removeGoods(productName, quantity, DEFAULT_TIMEOUT_SECONDS);
+    public DataPacket<CommandResponse> getProduct(int id, int timeoutSeconds) throws Exception {
+        GetProduct request = new GetProduct(id);
+        return sendRequestAndWait(CommandType.GET_PRODUCT, request, timeoutSeconds);
     }
 
+    public DataPacket<CommandResponse> updateProduct(int id, String name, Double price, Integer quantity) throws Exception {
+        return updateProduct(id, name, price, quantity, DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public DataPacket<CommandResponse> updateProduct(int id, String name, Double price, Integer quantity, int timeoutSeconds) throws Exception {
+        UpdateProduct request = new UpdateProduct(id, name, price, quantity);
+        return sendRequestAndWait(CommandType.UPDATE_PRODUCT, request, timeoutSeconds);
+    }
+
+    public DataPacket<CommandResponse> deleteProduct(int id) throws Exception {
+        return deleteProduct(id, DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public DataPacket<CommandResponse> deleteProduct(int id, int timeoutSeconds) throws Exception {
+        DeleteProduct request = new DeleteProduct(id);
+        return sendRequestAndWait(CommandType.DELETE_PRODUCT, request, timeoutSeconds);
+    }
+
+    public DataPacket<CommandResponse> getAllProducts() throws Exception {
+        return getAllProducts(DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public DataPacket<CommandResponse> getAllProducts(int timeoutSeconds) throws Exception {
+        return sendRequestAndWait(CommandType.GET_ALL_PRODUCTS, null, timeoutSeconds);
+    }
+
+    public DataPacket<CommandResponse> searchProducts(String name, Integer groupId, Double minPrice, Double maxPrice,
+                                                      Integer minQuantity, Integer maxQuantity, Integer page, Integer pageSize) throws Exception {
+        return searchProducts(name, groupId, minPrice, maxPrice, minQuantity, maxQuantity, page, pageSize, DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public DataPacket<CommandResponse> searchProducts(String name, Integer groupId, Double minPrice, Double maxPrice,
+                                                      Integer minQuantity, Integer maxQuantity, Integer page, Integer pageSize, int timeoutSeconds) throws Exception {
+        SearchProducts request = new SearchProducts(name, groupId, minPrice, maxPrice, minQuantity, maxQuantity, page, pageSize);
+        return sendRequestAndWait(CommandType.SEARCH_PRODUCTS, request, timeoutSeconds);
+    }
+
+    // Group operations
     public DataPacket<CommandResponse> createGroup(String groupName) throws Exception {
         return createGroup(groupName, DEFAULT_TIMEOUT_SECONDS);
     }
 
-    public DataPacket<CommandResponse> addProductToGroup(String productName, String groupName) throws Exception {
-        return addProductToGroup(productName, groupName, DEFAULT_TIMEOUT_SECONDS);
-    }
-
-    public DataPacket<CommandResponse> setPrice(String productName, double price) throws Exception {
-        return setPrice(productName, price, DEFAULT_TIMEOUT_SECONDS);
-    }
-
-    public DataPacket<CommandResponse> queryQuantity(String productName, int timeoutSeconds) throws Exception {
-        QueryQuantity query = new QueryQuantity(productName);
-        return sendRequestAndWait(CommandType.QUERY_QUANTITY, query, timeoutSeconds);
-    }
-
-    public DataPacket<CommandResponse> addGoods(String productName, int quantity, int timeoutSeconds) throws Exception {
-        ModifyGoods request = new ModifyGoods(productName, quantity);
-        return sendRequestAndWait(CommandType.ADD_GOODS, request, timeoutSeconds);
-    }
-
-    public DataPacket<CommandResponse> removeGoods(String productName, int quantity, int timeoutSeconds) throws Exception {
-        ModifyGoods request = new ModifyGoods(productName, quantity);
-        return sendRequestAndWait(CommandType.REMOVE_GOODS, request, timeoutSeconds);
-    }
-
     public DataPacket<CommandResponse> createGroup(String groupName, int timeoutSeconds) throws Exception {
         CreateGroup request = new CreateGroup(groupName);
-        return sendRequestAndWait(CommandType.ADD_GROUP, request, timeoutSeconds);
+        return sendRequestAndWait(CommandType.CREATE_GROUP, request, timeoutSeconds);
     }
 
-    public DataPacket<CommandResponse> addProductToGroup(String productName, String groupName, int timeoutSeconds) throws Exception {
-        AddProductToGroup request = new AddProductToGroup(productName, groupName);
+    public DataPacket<CommandResponse> getGroup(int id) throws Exception {
+        return getGroup(id, DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public DataPacket<CommandResponse> getGroup(int id, int timeoutSeconds) throws Exception {
+        GetGroup request = new GetGroup(id);
+        return sendRequestAndWait(CommandType.GET_GROUP, request, timeoutSeconds);
+    }
+
+    public DataPacket<CommandResponse> updateGroup(int id, String name) throws Exception {
+        return updateGroup(id, name, DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public DataPacket<CommandResponse> updateGroup(int id, String name, int timeoutSeconds) throws Exception {
+        UpdateGroup request = new UpdateGroup(id, name);
+        return sendRequestAndWait(CommandType.UPDATE_GROUP, request, timeoutSeconds);
+    }
+
+    public DataPacket<CommandResponse> deleteGroup(int id) throws Exception {
+        return deleteGroup(id, DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public DataPacket<CommandResponse> deleteGroup(int id, int timeoutSeconds) throws Exception {
+        DeleteGroup request = new DeleteGroup(id);
+        return sendRequestAndWait(CommandType.DELETE_GROUP, request, timeoutSeconds);
+    }
+
+    public DataPacket<CommandResponse> getAllGroups() throws Exception {
+        return getAllGroups(DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public DataPacket<CommandResponse> getAllGroups(int timeoutSeconds) throws Exception {
+        return sendRequestAndWait(CommandType.GET_ALL_GROUPS, null, timeoutSeconds);
+    }
+
+    // Product-Group relationship operations
+    public DataPacket<CommandResponse> addProductToGroup(int productId, int groupId) throws Exception {
+        return addProductToGroup(productId, groupId, DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public DataPacket<CommandResponse> addProductToGroup(int productId, int groupId, int timeoutSeconds) throws Exception {
+        AddProductToGroup request = new AddProductToGroup(productId, groupId);
         return sendRequestAndWait(CommandType.ADD_PRODUCT_TO_GROUP, request, timeoutSeconds);
     }
 
-    public DataPacket<CommandResponse> setPrice(String productName, double price, int timeoutSeconds) throws Exception {
-        CreateProduct request = new CreateProduct(productName, price);
-        return sendRequestAndWait(CommandType.SET_PRICE, request, timeoutSeconds);
+    public DataPacket<CommandResponse> removeProductFromGroup(int productId, int groupId) throws Exception {
+        return removeProductFromGroup(productId, groupId, DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public DataPacket<CommandResponse> removeProductFromGroup(int productId, int groupId, int timeoutSeconds) throws Exception {
+        RemoveProductFromGroup request = new RemoveProductFromGroup(productId, groupId);
+        return sendRequestAndWait(CommandType.REMOVE_PRODUCT_FROM_GROUP, request, timeoutSeconds);
+    }
+
+    public DataPacket<CommandResponse> getProductGroups(int productId) throws Exception {
+        return getProductGroups(productId, DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public DataPacket<CommandResponse> getProductGroups(int productId, int timeoutSeconds) throws Exception {
+        GetProductGroups request = new GetProductGroups(productId);
+        return sendRequestAndWait(CommandType.GET_PRODUCT_GROUPS, request, timeoutSeconds);
+    }
+
+    public DataPacket<CommandResponse> getGroupProducts(int groupId) throws Exception {
+        return getGroupProducts(groupId, DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public DataPacket<CommandResponse> getGroupProducts(int groupId, int timeoutSeconds) throws Exception {
+        GetGroupProducts request = new GetGroupProducts(groupId);
+        return sendRequestAndWait(CommandType.GET_GROUP_PRODUCTS, request, timeoutSeconds);
+    }
+
+    // System operations
+    public DataPacket<CommandResponse> isServerRunning() throws Exception {
+        return isServerRunning(DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public DataPacket<CommandResponse> isServerRunning(int timeoutSeconds) throws Exception {
+        IsRunning request = new IsRunning();
+        return sendRequestAndWait(CommandType.IS_RUNNING, request, timeoutSeconds);
+    }
+
+    public DataPacket<CommandResponse> clearDatabase() throws Exception {
+        return clearDatabase(DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public DataPacket<CommandResponse> clearDatabase(int timeoutSeconds) throws Exception {
+        return sendRequestAndWait(CommandType.CLEAR_DB, null, timeoutSeconds);
     }
 
     private DataPacket<CommandResponse> sendRequestAndWait(CommandType command, Object data, int timeoutSeconds) throws Exception {

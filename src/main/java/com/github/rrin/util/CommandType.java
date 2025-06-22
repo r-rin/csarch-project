@@ -1,14 +1,31 @@
 package com.github.rrin.util;
 
 public enum CommandType {
-    QUERY_QUANTITY(1),
-    REMOVE_GOODS(2),
-    ADD_GOODS(3),
-    ADD_GROUP(4),
-    ADD_PRODUCT_TO_GROUP(5),
-    SET_PRICE(6),
-    RESPONSE(7),
-    IS_RUNNING(8);
+    // Product operations
+    CREATE_PRODUCT(1),
+    GET_PRODUCT(2),
+    UPDATE_PRODUCT(3),
+    DELETE_PRODUCT(4),
+    SEARCH_PRODUCTS(5),
+    GET_ALL_PRODUCTS(6),
+
+    // Group operations
+    CREATE_GROUP(7),
+    GET_GROUP(8),
+    UPDATE_GROUP(9),
+    DELETE_GROUP(10),
+    GET_ALL_GROUPS(11),
+
+    // Product-Group relationship operations
+    ADD_PRODUCT_TO_GROUP(12),
+    REMOVE_PRODUCT_FROM_GROUP(13),
+    GET_PRODUCT_GROUPS(14),
+    GET_GROUP_PRODUCTS(15),
+
+    // System operations
+    IS_RUNNING(21),
+    RESPONSE(22),
+    CLEAR_DB(23);
 
     private final int code;
 
