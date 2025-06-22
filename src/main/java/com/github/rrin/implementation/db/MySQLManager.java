@@ -11,20 +11,14 @@ public class MySQLManager implements IDatabaseManager {
     Connection connection;
     MySQLOptions options;
 
-    public MySQLManager(MySQLOptions options) {
+    public MySQLManager(MySQLOptions options) throws SQLException, ClassNotFoundException {
         this.options = options;
         connect(options);
     }
 
-    private void connect(MySQLOptions options) {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            this.connection = DriverManager.getConnection(options.url(), options.user(), options.password());
-        } catch (ClassNotFoundException e) {
-            System.err.println("MySQL JDBC Driver not found");
-        } catch (SQLException e) {
-            System.err.println("MySQL connection failed");
-        }
+    private void connect(MySQLOptions options) throws SQLException, ClassNotFoundException {
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        this.connection = DriverManager.getConnection(options.url(), options.user(), options.password());
     }
 
     @Override

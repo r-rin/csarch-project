@@ -26,8 +26,12 @@ public class WarehouseService implements Closeable {
                 "warehouse_user",
                 "warehouse_pass"
         );
-        databaseManager = new MySQLManager(options);
-        init();
+        try {
+            databaseManager = new MySQLManager(options);
+            init();
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void init() throws SQLException {

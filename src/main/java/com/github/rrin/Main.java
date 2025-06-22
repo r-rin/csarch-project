@@ -11,6 +11,6 @@ public class Main {
                 "warehouse_pass"
         );
 
-        MySQLManager databaseManager = new MySQLManager(options);
+        //MySQLManager databaseManager = new MySQLManager(options);
     }
 }
