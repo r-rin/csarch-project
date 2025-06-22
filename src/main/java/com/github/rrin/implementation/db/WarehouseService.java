@@ -4,6 +4,8 @@ import com.github.rrin.dto.Group;
 import com.github.rrin.dto.Product;
 import com.github.rrin.interfaces.IDatabaseManager;
 import com.github.rrin.util.MySQLOptions;
+import com.github.rrin.util.ProductSearchFilters;
+import com.github.rrin.util.SearchResult;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -56,6 +58,94 @@ public class WarehouseService {
         databaseManager.update(createGroupProductsTable);
 
         System.out.println("Database initialized.");
+    }
+
+    public SearchResult<Product> searchProducts(ProductSearchFilters filters) {
+        List<Object> params = new ArrayList<>();
+        StringBuilder queryBuilder = new StringBuilder();
+        StringBuilder countQueryBuilder = new StringBuilder();
+
+        if (filters.getGroupId() != null) {
+            queryBuilder.append("SELECT DISTINCT p.* FROM products p ")
+                    .append("INNER JOIN group_products gp ON p.id = gp.product_id ");
+            countQueryBuilder.append("SELECT COUNT(DISTINCT p.id) FROM products p ")
+                    .append("INNER JOIN group_products gp ON p.id = gp.product_id ");
+        } else {
+            queryBuilder.append("SELECT p.* FROM products p ");
+            countQueryBuilder.append("SELECT COUNT(p.id) FROM products p ");
+        }
+
+        List<String> conditions = new ArrayList<>();
+
+        if (filters.getName() != null && !filters.getName().trim().isEmpty()) {
+            conditions.add("p.name LIKE ?");
+            params.add(filters.getName());
+        }
+
+        if (filters.getGroupId() != null) {
+            conditions.add("gp.group_id = ?");
+            params.add(filters.getGroupId());
+        }
+
+        if (filters.getMinPrice() != null) {
+            conditions.add("p.value >= ?");
+            params.add(filters.getMinPrice());
+        }
+
+        if (filters.getMaxPrice() != null) {
+            conditions.add("p.value <= ?");
+            params.add(filters.getMaxPrice());
+        }
+
+        if (filters.getMinQuantity() != null) {
+            conditions.add("p.quantity >= ?");
+            params.add(filters.getMinQuantity());
+        }
+
+        if (filters.getMaxQuantity() != null) {
+            conditions.add("p.quantity <= ?");
+            params.add(filters.getMaxQuantity());
+        }
+
+        if (!conditions.isEmpty()) {
+            String whereClause = " WHERE " + String.join(" AND ", conditions);
+            queryBuilder.append(whereClause);
+            countQueryBuilder.append(whereClause);
+        }
+
+        // Get total count first
+        int totalCount = 0;
+        try (ResultSet countResult = databaseManager.query(countQueryBuilder.toString(), params.toArray())) {
+            if (countResult.next()) {
+                totalCount = countResult.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new SearchResult<>(new ArrayList<>(), 0, filters.getPage(), filters.getPageSize());
+        }
+
+        // Add ordering and pagination to main query
+        queryBuilder.append(" ORDER BY p.name ASC");
+        queryBuilder.append(" LIMIT ? OFFSET ?");
+        params.add(filters.getPageSize());
+        params.add(filters.getPage() * filters.getPageSize());
+
+        List<Product> products = new ArrayList<>();
+        try (ResultSet rs = databaseManager.query(queryBuilder.toString(), params.toArray())) {
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                double value = rs.getDouble("value");
+                int quantity = rs.getInt("quantity");
+
+                Product product = new Product(id, name, value, quantity);
+                products.add(product);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return new SearchResult<>(products, totalCount, filters.getPage(), filters.getPageSize());
     }
 
     public int createProduct(String name, double price, int quantity) {
