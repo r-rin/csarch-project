@@ -50,19 +50,19 @@ public class UdpCommunicationTest {
 
     @Test
     void testTcpAddGoods() throws Exception {
-        DataPacket<CommandResponse> response = udpClient.createProduct("TestProductUDP", 10, 10, TEST_TIMEOUT);
+        DataPacket<CommandResponse> response = udpClient.createProduct("TestProduct", 10, 10, TEST_TIMEOUT);
 
         assertNotNull(response, "Response should not be null");
         assertNotNull(response.getBody(), "Response body should not be null");
         assertNotNull(response.getBody().getData(), "Response data should not be null");
 
         CommandResponse commandResponse = response.getBody().getData();
-        assert(commandResponse.title().equals("Success!"));
-        assert(commandResponse.message().equals("Added 10 of TestProductUDP. New quantity: 10"));
+        assert(commandResponse.title().equals("Created"));
+        assert(commandResponse.message().equals("Created product: TestProduct (ID: 1)"));
 
         response = udpClient.updateProduct(1, null, null, 40, TEST_TIMEOUT);
         commandResponse = response.getBody().getData();
-        assert(commandResponse.title().equals("Success!"));
-        assert(commandResponse.message().equals("Added 30 of TestProductUDP. New quantity: 40"));
+        assert(commandResponse.title().equals("Success"));
+        assert(commandResponse.message().equals("Updated product (ID: 1): quantity=40 \n - ID: 1, Name: TestProduct, Value: 10.0, Quantity: 40\n"));
     }
 }

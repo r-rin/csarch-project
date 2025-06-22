@@ -64,6 +64,6 @@ public class TcpCommunicationTest {
         response = tcpClient.updateProduct(1, null, null, 40, TEST_TIMEOUT);
         commandResponse = response.getBody().getData();
         assert(commandResponse.title().equals("Success"));
-        assert(commandResponse.message().equals("Updated product (ID: 1): quantity=40 \n - ID: 1, Name: TestProduct, Value: 10.0, Quantity: 40"));
+        assert(commandResponse.message().equals("Updated product (ID: 1): quantity=40 \n - ID: 1, Name: TestProduct, Value: 10.0, Quantity: 40\n"));
     }
 }
