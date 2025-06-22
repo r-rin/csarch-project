@@ -54,7 +54,7 @@ public class MySQLProductProcessor implements IProcessor, Runnable {
     public void stop() {
         running.set(false);
         try {
-            warehouseService.close();
+            if (warehouseService != null) { warehouseService.close(); }
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }
