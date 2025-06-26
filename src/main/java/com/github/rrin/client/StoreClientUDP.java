@@ -1,4 +1,4 @@
-package com.github.rrin;
+package com.github.rrin.client;
 
 import com.github.rrin.dto.*;
 import com.github.rrin.dto.AddProductToGroup;
@@ -6,85 +6,65 @@ import com.github.rrin.dto.group.*;
 import com.github.rrin.dto.product.*;
 import com.github.rrin.util.CommandType;
 import com.github.rrin.util.Converter;
-import com.github.rrin.util.DelayedRequest;
 import com.github.rrin.util.data.DataPacket;
 
-import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketTimeoutException;
-import java.util.concurrent.*;
+import java.net.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class StoreClientTCP {
+public class StoreClientUDP {
     private final String serverHost;
     private final int serverPort;
     private final AtomicBoolean running = new AtomicBoolean(false);
-    private final AtomicBoolean serverAvailable = new AtomicBoolean(false);
     private final AtomicLong packetIdCounter = new AtomicLong(1);
 
     private final ConcurrentHashMap<Long, CompletableFuture<DataPacket<CommandResponse>>> pendingRequests = new ConcurrentHashMap<>();
-    private final BlockingQueue<DelayedRequest> requestQueue = new LinkedBlockingQueue<>();
 
-    private Socket socket;
-    private DataInputStream inputStream;
-    private DataOutputStream outputStream;
+    private DatagramSocket socket;
     private Thread receiverThread;
-    private Thread senderThread;
-    private Thread reconnectThread;
 
     private static final int DEFAULT_TIMEOUT_SECONDS = 10;
-    private static final int CONNECTION_TIMEOUT_MS = 5000;
-    private static final int RECONNECT_INTERVAL_MS = 5000;
     private static final int SOCKET_TIMEOUT_MS = 1000;
 
-    public StoreClientTCP(String serverHost, int serverPort) {
+    public StoreClientUDP(String serverHost, int serverPort) {
         this.serverHost = serverHost;
         this.serverPort = serverPort;
     }
 
     public void start() {
         if (running.compareAndSet(false, true)) {
+            try {
+                socket = new DatagramSocket();
+            } catch (SocketException e) {
+                throw new RuntimeException(e);
+            }
+            try {
+                socket.setSoTimeout(SOCKET_TIMEOUT_MS);
+            } catch (SocketException e) {
+                throw new RuntimeException(e);
+            }
 
-            reconnectThread = new Thread(this::runReconnectLoop, "StoreClient-Reconnect");
-            reconnectThread.start();
+            receiverThread = new Thread(this::runReceiver, "StoreClient-Receiver");
+            receiverThread.start();
 
-            senderThread = new Thread(this::runSender, "StoreClient-Sender");
-            senderThread.start();
-
-            System.out.println("StoreClientTCP started, connecting to " + serverHost + ":" + serverPort);
+            System.out.println("StoreClient connected to " + serverHost + ":" + serverPort);
         }
     }
 
     public void stop() {
         if (running.compareAndSet(true, false)) {
-            System.out.println("Stopping StoreClientTCP...");
+            System.out.println("Stopping StoreClient...");
 
             pendingRequests.values().forEach(future ->
                     future.completeExceptionally(new RuntimeException("Client stopped")));
             pendingRequests.clear();
 
-            requestQueue.clear();
-
-            closeConnection();
-
-            if (reconnectThread != null) {
-                reconnectThread.interrupt();
-                try {
-                    reconnectThread.join();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-
-            if (senderThread != null) {
-                senderThread.interrupt();
-                try {
-                    senderThread.join();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
             }
 
             if (receiverThread != null) {
@@ -96,7 +76,7 @@ public class StoreClientTCP {
                 }
             }
 
-            System.out.println("StoreClientTCP stopped");
+            System.out.println("StoreClient stopped");
         }
     }
 
@@ -262,7 +242,7 @@ public class StoreClientTCP {
         try {
             return future.get(timeoutSeconds, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
-            System.out.println("Request timed out after " + timeoutSeconds + " seconds");
+            System.out.println("Packet with ID: " + (packetIdCounter.get() - 1) + " was timed out!");
             return null;
         }
     }
@@ -275,159 +255,75 @@ public class StoreClientTCP {
         }
 
         long packetId = packetIdCounter.getAndIncrement();
-        CompletableFuture<DataPacket<CommandResponse>> future = new CompletableFuture<>();
+        DataPacket<Object> requestPacket = new DataPacket<>(
+                (byte) 0x13,
+                (byte) 1,
+                packetId,
+                command,
+                1,
+                data,
+                0
+        );
 
+        CompletableFuture<DataPacket<CommandResponse>> future = new CompletableFuture<>();
         pendingRequests.put(packetId, future);
 
-        DelayedRequest request = new DelayedRequest(command, data, future, packetId);
-
-        if (!requestQueue.offer(request)) {
+        try {
+            sendPacket(requestPacket);
+        } catch (Exception e) {
             pendingRequests.remove(packetId);
-            future.completeExceptionally(new RuntimeException("Request queue is full"));
+            future.completeExceptionally(e);
         }
 
         return future;
     }
 
-    private void connectToServer() {
-        try {
-            closeConnection();
+    private void sendPacket(DataPacket<?> packet) throws Exception {
+        byte[] packetBytes = packet.toByteArray();
 
-            socket = new Socket();
-            socket.connect(new InetSocketAddress(serverHost, serverPort), CONNECTION_TIMEOUT_MS);
-            socket.setSoTimeout(SOCKET_TIMEOUT_MS);
-
-            inputStream = new DataInputStream(socket.getInputStream());
-            outputStream = new DataOutputStream(socket.getOutputStream());
-
-            if (receiverThread != null) {
-                receiverThread.interrupt();
-            }
-            receiverThread = new Thread(this::runReceiver, "StoreClient-Receiver");
-            receiverThread.start();
-
-            serverAvailable.set(true);
-            System.out.println("[STORE-CLIENT] Connected to server " + serverHost + ":" + serverPort);
-
-        } catch (Exception e) {
-            System.out.println("[STORE-CLIENT] Failed to connect to server: " + e.getMessage());
-            closeConnection();
-            serverAvailable.set(false);
-        }
-    }
-
-    private void closeConnection() {
-        serverAvailable.set(false);
-
-        try {
-            if (outputStream != null) {
-                outputStream.close();
-            }
-        } catch (IOException ignored) {}
-
-        try {
-            if (inputStream != null) {
-                inputStream.close();
-            }
-        } catch (IOException ignored) {}
-
-        try {
-            if (socket != null && !socket.isClosed()) {
-                socket.close();
-            }
-        } catch (IOException ignored) {}
-
-        outputStream = null;
-        inputStream = null;
-        socket = null;
-    }
-
-    private void runReconnectLoop() {
-        while (running.get()) {
-            if (!serverAvailable.get()) {
-                System.out.println("[STORE-CLIENT] Attempting to reconnect...");
-                connectToServer();
-            }
-
-            try {
-                Thread.sleep(RECONNECT_INTERVAL_MS);
-            } catch (InterruptedException e) {
-                break;
-            }
-        }
-        System.out.println("[STORE-CLIENT] Reconnect thread stopped");
-    }
-
-    private void runSender() {
-        while (running.get()) {
-            try {
-                DelayedRequest request = requestQueue.poll(1, TimeUnit.SECONDS);
-                if (request == null) {
-                    continue;
-                }
-
-                if (!serverAvailable.get()) {
-                    requestQueue.offer(request);
-                    Thread.sleep(100);
-                    continue;
-                }
-
-                try {
-                    sendPacketNow(request);
-                } catch (Exception e) {
-                    System.err.println("[STORE-CLIENT] Error sending packet: " + e.getMessage());
-                    serverAvailable.set(false);
-                    requestQueue.offer(request);
-                }
-
-            } catch (InterruptedException e) {
-                break;
-            }
-        }
-        System.out.println("[STORE-CLIENT] Sender thread stopped");
-    }
-
-    private void sendPacketNow(DelayedRequest request) throws Exception {
-        DataPacket<Object> requestPacket = new DataPacket<>(
-                (byte) 0x13,
-                (byte) 1,
-                request.packetId(),
-                request.command(),
-                1,
-                request.data(),
-                0
+        InetAddress serverAddress = InetAddress.getByName(serverHost);
+        DatagramPacket udpPacket = new DatagramPacket(
+                packetBytes,
+                packetBytes.length,
+                serverAddress,
+                serverPort
         );
 
-        byte[] packetBytes = requestPacket.toByteArray();
-        outputStream.write(packetBytes);
-        outputStream.flush();
+        socket.send(udpPacket);
 
-        System.out.println("[STORE-CLIENT] Sent " + request.command() +
-                " request (ID: " + request.packetId() + ")");
+        System.out.println("[STORE-CLIENT] Sent " + packet.getBody().getCommand() +
+                " request (ID: " + packet.getPacketId() + ")");
         System.out.println("[STORE-CLIENT] Data: " + Converter.bytesToHex(packetBytes));
     }
 
     private void runReceiver() {
-        while (running.get() && serverAvailable.get()) {
+        byte[] buffer = new byte[4096];
+
+        while (running.get()) {
+            printStatistics();
             try {
-                byte[] buffer = new byte[2048];
-                inputStream.read(buffer);
-                handleReceivedPacket(buffer);
+                DatagramPacket receivePacket = new DatagramPacket(buffer, buffer.length);
+                socket.receive(receivePacket);
+
+                handleReceivedPacket(receivePacket);
+
             } catch (SocketTimeoutException e) {
                 continue;
             } catch (Exception e) {
-                if (running.get() && serverAvailable.get()) {
+                if (running.get()) {
                     System.err.println("[STORE-CLIENT] Error receiving: " + e.getMessage());
-                    serverAvailable.set(false);
                 }
-                break;
             }
         }
+
         System.out.println("[STORE-CLIENT] Receiver thread stopped");
     }
 
-    private void handleReceivedPacket(byte[] data) {
+    private void handleReceivedPacket(DatagramPacket receivePacket) {
         try {
+            byte[] data = new byte[receivePacket.getLength()];
+            System.arraycopy(receivePacket.getData(), receivePacket.getOffset(), data, 0, receivePacket.getLength());
+
             System.out.println("[STORE-CLIENT] Received response (" + data.length + " bytes)");
             System.out.println("[STORE-CLIENT] Data: " + Converter.bytesToHex(data));
 
@@ -458,23 +354,13 @@ public class StoreClientTCP {
         return running.get();
     }
 
-    public boolean isServerAvailable() {
-        return serverAvailable.get();
-    }
-
     public int getPendingRequestCount() {
         return pendingRequests.size();
     }
 
-    public int getQueuedRequestCount() {
-        return requestQueue.size();
-    }
-
     public void printStatistics() {
         System.out.println("\n[STORE-CLIENT] Running: " + running.get());
-        System.out.println("[STORE-CLIENT] Server available: " + serverAvailable.get());
         System.out.println("[STORE-CLIENT] Pending requests: " + pendingRequests.size());
-        System.out.println("[STORE-CLIENT] Queued requests: " + requestQueue.size());
         System.out.println("[STORE-CLIENT] Next packet ID: " + packetIdCounter.get());
     }
 }
