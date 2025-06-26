@@ -47,7 +47,7 @@ public class WarehouseService implements Closeable {
         String createProductsTable = """
                 CREATE TABLE IF NOT EXISTS products (
                         id INT AUTO_INCREMENT PRIMARY KEY,
-                        name VARCHAR(255) NOT NULL,
+                        name VARCHAR(255) UNIQUE NOT NULL,
                         value DECIMAL(10,2) NOT NULL,
                         quantity INT NOT NULL
                     );
@@ -184,6 +184,9 @@ public class WarehouseService implements Closeable {
         String insertProductSQL = "INSERT INTO products (name, value, quantity) VALUES (?, ?, ?)";
         Connection connection = databaseManager.getConnection();
 
+        boolean productExists = doProductNameExist(name);
+        if (productExists) {return -1;}
+
         try (PreparedStatement ps = connection.prepareStatement(insertProductSQL, java.sql.Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, name);
             ps.setDouble(2, price);
@@ -211,6 +214,9 @@ public class WarehouseService implements Closeable {
     public int createGroup(String name) {
         String insertGroupsSQL = "INSERT INTO goods_groups (name) VALUES (?)";
         Connection connection = databaseManager.getConnection();
+
+        boolean groupExists = doGroupNameExist(name);
+        if (groupExists) {return -1;}
 
         try (PreparedStatement ps = connection.prepareStatement(insertGroupsSQL, java.sql.Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, name);
@@ -256,6 +262,9 @@ public class WarehouseService implements Closeable {
         boolean productExist = doProductExist(id);
         if (!productExist) {return false;}
 
+        boolean productNameExist = doProductNameExist(name);
+        if (productNameExist) {return false;}
+
         String query = "UPDATE products SET name = ? WHERE id = ?";
 
         try {
@@ -291,6 +300,9 @@ public class WarehouseService implements Closeable {
     public boolean setGroupName(int id, String name) {
         boolean groupExist = doGroupExist(id);
         if (!groupExist) {return false;}
+
+        boolean groupNameExist = doGroupNameExist(name);
+        if (groupNameExist) {return false;}
 
         String query = "UPDATE goods_groups SET name = ? WHERE id = ?";
 
@@ -539,9 +551,35 @@ public class WarehouseService implements Closeable {
         return false;
     }
 
+    public boolean doGroupNameExist(String name) {
+        String query = "SELECT COUNT(*) FROM goods_groups WHERE name = ?";
+        try (ResultSet res = databaseManager.query(query, name)) {
+            if (res.next()) {
+                return res.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public boolean doProductExist(int productId) {
         String query = "SELECT COUNT(*) FROM products WHERE id = ?";
         try (ResultSet res = databaseManager.query(query, productId)) {
+            if (res.next()) {
+                boolean result = res.getInt(1) > 0;
+                res.close();
+                return result;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean doProductNameExist(String name) {
+        String query = "SELECT COUNT(*) FROM products WHERE name = ?";
+        try (ResultSet res = databaseManager.query(query, name)) {
             if (res.next()) {
                 boolean result = res.getInt(1) > 0;
                 res.close();
