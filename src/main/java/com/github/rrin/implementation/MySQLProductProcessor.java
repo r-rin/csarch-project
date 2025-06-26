@@ -179,9 +179,9 @@ public class MySQLProductProcessor implements IProcessor, Runnable {
     }
 
     private CommandResponse handleCreateProduct(CreateProduct data) {
-        int id = warehouseService.createProduct(data.name(), data.price(), data.quantity());
+        int id = warehouseService.createProduct(data.name(), data.manufacturer(), data.description(), data.price(), data.quantity());
         if (id > 0) {
-            Product product = new Product(id, data.name(), data.price(), data.quantity());
+            Product product = new Product(id, data.name(),  data.manufacturer(), data.description(), data.price(), data.quantity());
             String message = String.format("Created product: %s (ID: %d)", data.name(), id);
             System.out.println(message);
             return new CommandResponse(201, "Created", message);
@@ -280,7 +280,7 @@ public class MySQLProductProcessor implements IProcessor, Runnable {
 
     // Group CRUD handlers
     private CommandResponse handleCreateGroup(CreateGroup data) {
-        int id = warehouseService.createGroup(data.groupName());
+        int id = warehouseService.createGroup(data.groupName(), data.description());
         if (id > 0) {
             String message = String.format("Created group: %s (ID: %d)", data.groupName(), id);
             System.out.println(message);

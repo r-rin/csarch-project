@@ -54,7 +54,7 @@ public class UdpCommunicationTest {
 
     @Test
     void testTcpAddGoods() throws Exception {
-        DataPacket<CommandResponse> response = udpClient.createProduct("TestProduct", 10, 10, TEST_TIMEOUT);
+        DataPacket<CommandResponse> response = udpClient.createProduct("TestProduct", "Manuf", "Desc", 10, 10, TEST_TIMEOUT);
 
         assertNotNull(response, "Response should not be null");
         assertNotNull(response.getBody(), "Response body should not be null");

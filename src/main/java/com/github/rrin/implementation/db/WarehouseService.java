@@ -48,6 +48,8 @@ public class WarehouseService implements Closeable {
                 CREATE TABLE IF NOT EXISTS products (
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         name VARCHAR(255) UNIQUE NOT NULL,
+                        manufacturer VARCHAR(255) NOT NULL,
+                        description TEXT NOT NULL,
                         value DECIMAL(10,2) NOT NULL,
                         quantity INT NOT NULL
                     );
@@ -56,6 +58,7 @@ public class WarehouseService implements Closeable {
         String createGroupsTable = """
                     CREATE TABLE IF NOT EXISTS goods_groups (
                         id INT AUTO_INCREMENT PRIMARY KEY,
+                        description TEXT NOT NULL,
                         name VARCHAR(255) UNIQUE NOT NULL
                     );
                 """;
@@ -169,8 +172,10 @@ public class WarehouseService implements Closeable {
                 String name = rs.getString("name");
                 double value = rs.getDouble("value");
                 int quantity = rs.getInt("quantity");
+                String description = rs.getString("description");
+                String manufacturer = rs.getString("manufacturer");
 
-                Product product = new Product(id, name, value, quantity);
+                Product product = new Product(id, name, manufacturer, description, value, quantity);
                 products.add(product);
             }
         } catch (SQLException e) {
@@ -180,8 +185,8 @@ public class WarehouseService implements Closeable {
         return new SearchResult<>(products, totalCount, filters.getPage(), filters.getPageSize());
     }
 
-    public int createProduct(String name, double price, int quantity) {
-        String insertProductSQL = "INSERT INTO products (name, value, quantity) VALUES (?, ?, ?)";
+    public int createProduct(String name, String manufacturer, String description, double price, int quantity) {
+        String insertProductSQL = "INSERT INTO products (name, value, quantity, manufacturer, description) VALUES (?, ?, ?, ?, ?)";
         Connection connection = databaseManager.getConnection();
 
         boolean productExists = doProductNameExist(name);
@@ -191,6 +196,9 @@ public class WarehouseService implements Closeable {
             ps.setString(1, name);
             ps.setDouble(2, price);
             ps.setInt(3, quantity);
+            ps.setString(4, manufacturer);
+            ps.setString(5, description);
+
             int affectedRows = ps.executeUpdate();
 
             if (affectedRows == 0) {
@@ -211,8 +219,8 @@ public class WarehouseService implements Closeable {
         }
     }
 
-    public int createGroup(String name) {
-        String insertGroupsSQL = "INSERT INTO goods_groups (name) VALUES (?)";
+    public int createGroup(String name, String description) {
+        String insertGroupsSQL = "INSERT INTO goods_groups (name, description) VALUES (?, ?)";
         Connection connection = databaseManager.getConnection();
 
         boolean groupExists = doGroupNameExist(name);
@@ -220,6 +228,8 @@ public class WarehouseService implements Closeable {
 
         try (PreparedStatement ps = connection.prepareStatement(insertGroupsSQL, java.sql.Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, name);
+            ps.setString(2, description);
+
             int affectedRows = ps.executeUpdate();
 
             if (affectedRows == 0) {
@@ -297,6 +307,42 @@ public class WarehouseService implements Closeable {
         return false;
     }
 
+    public boolean setProductManufacturer(int id, String manufacturer) {
+        boolean productExist = doProductExist(id);
+        if (!productExist) {return false;}
+
+        String query = "UPDATE products SET manufacturer = ? WHERE id = ?";
+
+        try {
+            int res = databaseManager.update(query, manufacturer, id);
+            if (res > 0) {
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public boolean setProductDescription(int id, String description) {
+        boolean productExist = doProductExist(id);
+        if (!productExist) {return false;}
+
+        String query = "UPDATE products SET description = ? WHERE id = ?";
+
+        try {
+            int res = databaseManager.update(query, description, id);
+            if (res > 0) {
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
     public boolean setGroupName(int id, String name) {
         boolean groupExist = doGroupExist(id);
         if (!groupExist) {return false;}
@@ -308,6 +354,24 @@ public class WarehouseService implements Closeable {
 
         try {
             int res = databaseManager.update(query, name, id);
+            if (res > 0) {
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public boolean setGroupDescription(int id, String description) {
+        boolean groupExist = doGroupExist(id);
+        if (!groupExist) {return false;}
+
+        String query = "UPDATE goods_groups SET description = ? WHERE id = ?";
+
+        try {
+            int res = databaseManager.update(query, description, id);
             if (res > 0) {
                 return true;
             }
@@ -419,8 +483,9 @@ public class WarehouseService implements Closeable {
             while (res.next()) {
                 int id = res.getInt("id");
                 String name = res.getString("name");
+                String description = res.getString("description");
 
-                Group group = new Group(id, name);
+                Group group = new Group(id, name, description);
                 groups.add(group);
             }
         } catch (SQLException e) {
@@ -443,8 +508,10 @@ public class WarehouseService implements Closeable {
                 String name = res.getString("name");
                 int quantity = res.getInt("quantity");
                 int price = res.getInt("value");
+                String description = res.getString("description");
+                String manufacturer = res.getString("manufacturer");
 
-                Product product = new Product(id, name, price, quantity);
+                Product product = new Product(id, name, manufacturer, description, price, quantity);
                 products.add(product);
             }
         } catch (SQLException e) {
@@ -460,7 +527,8 @@ public class WarehouseService implements Closeable {
         try (ResultSet res = databaseManager.query(query, id)) {
             if (res.next()) {
                 String name = res.getString("name");
-                return new Group(id, name);
+                String description = res.getString("description");
+                return new Group(id, name, description);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -517,8 +585,10 @@ public class WarehouseService implements Closeable {
                 String name = res.getString("name");
                 int quantity = res.getInt("quantity");
                 double price = res.getDouble("value");
+                String description = res.getString("description");
+                String manufacturer = res.getString("manufacturer");
 
-                return new Product(id, name, price, quantity);
+                return new Product(id, name, manufacturer, description, price, quantity);
             }
         } catch (SQLException e) {
             e.printStackTrace();

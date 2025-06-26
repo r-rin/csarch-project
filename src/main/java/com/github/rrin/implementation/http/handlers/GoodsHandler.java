@@ -106,6 +106,8 @@ public class GoodsHandler extends BaseHandler {
             String name = json.get("name").asText();
             double price = json.get("price").asDouble();
             int quantity = json.get("quantity").asInt();
+            String description = json.get("description").asText();
+            String manufacturer = json.get("manufacturer").asText();
 
             // Validate input
             if (name == null || name.trim().isEmpty() || price < 0 || quantity < 0) {
@@ -113,7 +115,7 @@ public class GoodsHandler extends BaseHandler {
                 return;
             }
 
-            int productId = warehouseService.createProduct(name, price, quantity);
+            int productId = warehouseService.createProduct(name, manufacturer, description, price, quantity);
 
             if (productId > 0) {
                 Map<String, Integer> response = new HashMap<>();

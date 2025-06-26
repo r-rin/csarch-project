@@ -46,7 +46,7 @@ public class WarehouseServiceTest {
 
     @Test
     public void testCreateProduct() {
-        int productId = warehouseService.createProduct("Test Product", 99.99, 10);
+        int productId = warehouseService.createProduct("Test Product", "Test", "Test Description", 99.99, 10);
         assertTrue(productId > 0, "Product ID should be positive");
 
         Product product = warehouseService.getProduct(productId);
@@ -54,11 +54,13 @@ public class WarehouseServiceTest {
         assertEquals("Test Product", product.name());
         assertEquals(99.99, product.price(), 0.01);
         assertEquals(10, product.quantity());
+        assertEquals("Test Description", product.description());
+        assertEquals("Test", product.manufacturer());
     }
 
     @Test
     public void testGetProduct() {
-        int productId = warehouseService.createProduct("Test Product", 50.0, 5);
+        int productId = warehouseService.createProduct("Test Product", "Test", "Test Description", 50.0, 5);
 
         Product product = warehouseService.getProduct(productId);
         assertNotNull(product);
@@ -76,9 +78,9 @@ public class WarehouseServiceTest {
 
     @Test
     public void testGetAllProducts() {
-        warehouseService.createProduct("Product 1", 10.0, 1);
-        warehouseService.createProduct("Product 2", 20.0, 2);
-        warehouseService.createProduct("Product 3", 30.0, 3);
+        warehouseService.createProduct("Product 1", "Test", "Test Description", 10.0, 1);
+        warehouseService.createProduct("Product 2", "Test", "Test Description", 20.0, 2);
+        warehouseService.createProduct("Product 3", "Test", "Test Description", 30.0, 3);
 
         List<Product> products = warehouseService.getProducts();
         assertEquals(3, products.size());
@@ -86,7 +88,7 @@ public class WarehouseServiceTest {
 
     @Test
     public void testUpdateProductName() {
-        int productId = warehouseService.createProduct("Original Name", 10.0, 5);
+        int productId = warehouseService.createProduct("Original Name", "Test", "Test Description", 10.0, 5);
 
         boolean updated = warehouseService.setProductName(productId, "Updated Name");
         assertTrue(updated);
@@ -97,7 +99,7 @@ public class WarehouseServiceTest {
 
     @Test
     public void testUpdateProductPrice() {
-        int productId = warehouseService.createProduct("Test Product", 10.0, 5);
+        int productId = warehouseService.createProduct("Test Product", "Test", "Test Description", 10.0, 5);
 
         boolean updated = warehouseService.setProductPrice(productId, 25.50);
         assertTrue(updated);
@@ -108,7 +110,7 @@ public class WarehouseServiceTest {
 
     @Test
     public void testUpdateProductQuantity() {
-        int productId = warehouseService.createProduct("Test Product", 10.0, 5);
+        int productId = warehouseService.createProduct("Test Product", "Test", "Test Description", 10.0, 5);
 
         boolean updated = warehouseService.setProductQuantities(productId, 15);
         assertTrue(updated);
@@ -131,7 +133,7 @@ public class WarehouseServiceTest {
 
     @Test
     public void testRemoveProduct() {
-        int productId = warehouseService.createProduct("Test Product", 10.0, 5);
+        int productId = warehouseService.createProduct("Test Product", "Test", "Test Description", 10.0, 5);
 
         Product removedProduct = warehouseService.removeProduct(productId);
         assertNotNull(removedProduct);
@@ -149,7 +151,7 @@ public class WarehouseServiceTest {
 
     @Test
     public void testDoProductExist() {
-        int productId = warehouseService.createProduct("Test Product", 10.0, 5);
+        int productId = warehouseService.createProduct("Test Product", "Test", "Test Description", 10.0, 5);
 
         assertTrue(warehouseService.doProductExist(productId));
         assertFalse(warehouseService.doProductExist(999));
@@ -158,22 +160,24 @@ public class WarehouseServiceTest {
     // Group CRUD Tests
     @Test
     public void testCreateGroup() {
-        int groupId = warehouseService.createGroup("Test Group");
+        int groupId = warehouseService.createGroup("Test Group", "Group Description");
         assertTrue(groupId > 0, "Group ID should be positive");
 
         Group group = warehouseService.getGroup(groupId);
         assertNotNull(group);
         assertEquals("Test Group", group.name());
+        assertEquals("Group Description", group.description());
     }
 
     @Test
     public void testGetGroup() {
-        int groupId = warehouseService.createGroup("Test Group");
+        int groupId = warehouseService.createGroup("Test Group", "Group Description");
 
         Group group = warehouseService.getGroup(groupId);
         assertNotNull(group);
         assertEquals(groupId, group.id());
         assertEquals("Test Group", group.name());
+        assertEquals("Group Description", group.description());
     }
 
     @Test
@@ -184,9 +188,9 @@ public class WarehouseServiceTest {
 
     @Test
     public void testGetAllGroups() {
-        warehouseService.createGroup("Group 1");
-        warehouseService.createGroup("Group 2");
-        warehouseService.createGroup("Group 3");
+        warehouseService.createGroup("Group 1", "Group Description");
+        warehouseService.createGroup("Group 2", "Group Description");
+        warehouseService.createGroup("Group 3", "Group Description");
 
         List<Group> groups = warehouseService.getGroups();
         assertEquals(3, groups.size());
@@ -194,13 +198,14 @@ public class WarehouseServiceTest {
 
     @Test
     public void testUpdateGroupName() {
-        int groupId = warehouseService.createGroup("Original Group");
+        int groupId = warehouseService.createGroup("Original Group", "Original Group Description");
 
         boolean updated = warehouseService.setGroupName(groupId, "Updated Group");
         assertTrue(updated);
 
         Group group = warehouseService.getGroup(groupId);
         assertEquals("Updated Group", group.name());
+        assertEquals("Original Group Description", group.description());
     }
 
     @Test
@@ -211,7 +216,7 @@ public class WarehouseServiceTest {
 
     @Test
     public void testRemoveGroup() {
-        int groupId = warehouseService.createGroup("Test Group");
+        int groupId = warehouseService.createGroup("Test Group", "Group Description");
 
         Group removedGroup = warehouseService.removeGroup(groupId);
         assertNotNull(removedGroup);
@@ -229,7 +234,7 @@ public class WarehouseServiceTest {
 
     @Test
     public void testDoGroupExist() {
-        int groupId = warehouseService.createGroup("Test Group");
+        int groupId = warehouseService.createGroup("Test Group", "Group Description");
 
         assertTrue(warehouseService.doGroupExist(groupId));
         assertFalse(warehouseService.doGroupExist(999));
@@ -238,8 +243,8 @@ public class WarehouseServiceTest {
     // Group-Product Relationship Tests
     @Test
     public void testAddProductToGroup() {
-        int productId = warehouseService.createProduct("Test Product", 10.0, 5);
-        int groupId = warehouseService.createGroup("Test Group");
+        int productId = warehouseService.createProduct("Test Product", "Manufacturer!", "Description!", 10.0, 5);
+        int groupId = warehouseService.createGroup("Test Group", "Group Description");
 
         boolean added = warehouseService.addProductToGroup(groupId, productId);
         assertTrue(added);
@@ -249,8 +254,8 @@ public class WarehouseServiceTest {
 
     @Test
     public void testAddProductToGroupTwice() {
-        int productId = warehouseService.createProduct("Test Product", 10.0, 5);
-        int groupId = warehouseService.createGroup("Test Group");
+        int productId = warehouseService.createProduct("Test Product", "Manufacturer!", "Description!", 10.0, 5);
+        int groupId = warehouseService.createGroup("Test Group", "Group Description");
 
         warehouseService.addProductToGroup(groupId, productId);
         boolean addedSecondTime = warehouseService.addProductToGroup(groupId, productId);
@@ -259,7 +264,7 @@ public class WarehouseServiceTest {
 
     @Test
     public void testAddNonExistentProductToGroup() {
-        int groupId = warehouseService.createGroup("Test Group");
+        int groupId = warehouseService.createGroup("Test Group", "Group Description");
 
         boolean added = warehouseService.addProductToGroup(groupId, 999);
         assertFalse(added);
@@ -267,7 +272,7 @@ public class WarehouseServiceTest {
 
     @Test
     public void testAddProductToNonExistentGroup() {
-        int productId = warehouseService.createProduct("Test Product", 10.0, 5);
+        int productId = warehouseService.createProduct("Test Product", "Manufacturer!", "Description!", 10.0, 5);
 
         boolean added = warehouseService.addProductToGroup(999, productId);
         assertFalse(added);
@@ -275,8 +280,8 @@ public class WarehouseServiceTest {
 
     @Test
     public void testRemoveProductFromGroup() {
-        int productId = warehouseService.createProduct("Test Product", 10.0, 5);
-        int groupId = warehouseService.createGroup("Test Group");
+        int productId = warehouseService.createProduct("Test Product", "Manufacturer!", "Description!", 10.0, 5);
+        int groupId = warehouseService.createGroup("Test Group", "Group Description");
 
         warehouseService.addProductToGroup(groupId, productId);
         boolean removed = warehouseService.removeProductFromGroup(groupId, productId);
@@ -287,8 +292,8 @@ public class WarehouseServiceTest {
 
     @Test
     public void testRemoveProductNotInGroup() {
-        int productId = warehouseService.createProduct("Test Product", 10.0, 5);
-        int groupId = warehouseService.createGroup("Test Group");
+        int productId = warehouseService.createProduct("Test Product", "Manufacturer!", "Description!", 10.0, 5);
+        int groupId = warehouseService.createGroup("Test Group", "Group Description");
 
         boolean removed = warehouseService.removeProductFromGroup(groupId, productId);
         assertTrue(removed, "Should return true even if product wasn't in group");
@@ -296,9 +301,9 @@ public class WarehouseServiceTest {
 
     @Test
     public void testGetProductGroups() {
-        int productId = warehouseService.createProduct("Test Product", 10.0, 5);
-        int groupId1 = warehouseService.createGroup("Group 1");
-        int groupId2 = warehouseService.createGroup("Group 2");
+        int productId = warehouseService.createProduct("Test Product", "Manufacturer!", "Description!", 10.0, 5);
+        int groupId1 = warehouseService.createGroup("Group 1", "Group Description");
+        int groupId2 = warehouseService.createGroup("Group 2", "Group Description");
 
         warehouseService.addProductToGroup(groupId1, productId);
         warehouseService.addProductToGroup(groupId2, productId);
@@ -309,9 +314,9 @@ public class WarehouseServiceTest {
 
     @Test
     public void testGetGroupProducts() {
-        int groupId = warehouseService.createGroup("Test Group");
-        int productId1 = warehouseService.createProduct("Product 1", 10.0, 5);
-        int productId2 = warehouseService.createProduct("Product 2", 20.0, 10);
+        int groupId = warehouseService.createGroup("Test Group", "Group Description");
+        int productId1 = warehouseService.createProduct("Product 1", "Manufacturer!", "Description!", 10.0, 5);
+        int productId2 = warehouseService.createProduct("Product 2", "Manufacturer!", "Description!", 20.0, 10);
 
         warehouseService.addProductToGroup(groupId, productId1);
         warehouseService.addProductToGroup(groupId, productId2);
@@ -322,8 +327,8 @@ public class WarehouseServiceTest {
 
     @Test
     public void testIsProductInGroup() {
-        int productId = warehouseService.createProduct("Test Product", 10.0, 5);
-        int groupId = warehouseService.createGroup("Test Group");
+        int productId = warehouseService.createProduct("Test Product", "Manufacturer!", "Description!", 10.0, 5);
+        int groupId = warehouseService.createGroup("Test Group", "Group Description");
 
         assertFalse(warehouseService.isProductInGroup(groupId, productId));
 
@@ -334,9 +339,9 @@ public class WarehouseServiceTest {
     // Search Tests
     @Test
     public void testSearchProductsNoFilters() {
-        warehouseService.createProduct("Apple", 1.0, 10);
-        warehouseService.createProduct("Banana", 2.0, 20);
-        warehouseService.createProduct("Cherry", 3.0, 30);
+        warehouseService.createProduct("Apple", "Manufacturer!", "Description!", 1.0, 10);
+        warehouseService.createProduct("Banana", "Manufacturer!", "Description!", 2.0, 20);
+        warehouseService.createProduct("Cherry", "Manufacturer!", "Description!", 3.0, 30);
 
         ProductSearchFilters filters = new ProductSearchFilters();
         filters.setPage(0);
@@ -349,9 +354,9 @@ public class WarehouseServiceTest {
 
     @Test
     public void testSearchProductsByName() {
-        warehouseService.createProduct("Apple Juice", 1.0, 10);
-        warehouseService.createProduct("Apple Pie", 2.0, 20);
-        warehouseService.createProduct("Banana", 3.0, 30);
+        warehouseService.createProduct("Apple Juice", "Manufacturer!", "Description!", 1.0, 10);
+        warehouseService.createProduct("Apple Pie", "Manufacturer!", "Description!", 2.0, 20);
+        warehouseService.createProduct("Banana", "Manufacturer!", "Description!", 3.0, 30);
 
         ProductSearchFilters filters = new ProductSearchFilters();
         filters.setName("Apple%");
@@ -365,9 +370,9 @@ public class WarehouseServiceTest {
 
     @Test
     public void testSearchProductsByPriceRange() {
-        warehouseService.createProduct("Cheap", 5.0, 10);
-        warehouseService.createProduct("Medium", 15.0, 20);
-        warehouseService.createProduct("Expensive", 25.0, 30);
+        warehouseService.createProduct("Cheap", "Manufacturer!", "Description!", 5.0, 10);
+        warehouseService.createProduct("Medium", "Manufacturer!", "Description!", 15.0, 20);
+        warehouseService.createProduct("Expensive", "Manufacturer!", "Description!", 25.0, 30);
 
         ProductSearchFilters filters = new ProductSearchFilters();
         filters.setMinPrice(10.0);
@@ -382,9 +387,9 @@ public class WarehouseServiceTest {
 
     @Test
     public void testSearchProductsByQuantityRange() {
-        warehouseService.createProduct("Low Stock", 10.0, 5);
-        warehouseService.createProduct("Medium Stock", 10.0, 15);
-        warehouseService.createProduct("High Stock", 10.0, 25);
+        warehouseService.createProduct("Low Stock", "Manufacturer!", "Description!", 10.0, 5);
+        warehouseService.createProduct("Medium Stock", "Manufacturer!", "Description!", 10.0, 15);
+        warehouseService.createProduct("High Stock", "Manufacturer!", "Description!", 10.0, 25);
 
         ProductSearchFilters filters = new ProductSearchFilters();
         filters.setMinQuantity(10);
@@ -399,10 +404,10 @@ public class WarehouseServiceTest {
 
     @Test
     public void testSearchProductsByGroup() {
-        int groupId = warehouseService.createGroup("Electronics");
-        int productId1 = warehouseService.createProduct("Phone", 500.0, 10);
-        int productId2 = warehouseService.createProduct("Laptop", 1000.0, 5);
-        int productId3 = warehouseService.createProduct("Book", 20.0, 50);
+        int groupId = warehouseService.createGroup("Electronics", "Electronics Description");
+        int productId1 = warehouseService.createProduct("Phone", "Manufacturer!", "Description!", 500.0, 10);
+        int productId2 = warehouseService.createProduct("Laptop", "Manufacturer!", "Description!", 1000.0, 5);
+        int productId3 = warehouseService.createProduct("Book", "Manufacturer!", "Description!", 20.0, 50);
 
         warehouseService.addProductToGroup(groupId, productId1);
         warehouseService.addProductToGroup(groupId, productId2);
@@ -420,7 +425,7 @@ public class WarehouseServiceTest {
     @Test
     public void testSearchProductsPagination() {
         for (int i = 1; i <= 25; i++) {
-            warehouseService.createProduct("Product " + i, i * 10.0, i);
+            warehouseService.createProduct("Product " + i, "Manufacturer!", "Description!", i * 10.0, i);
         }
 
         ProductSearchFilters filters = new ProductSearchFilters();
@@ -436,8 +441,8 @@ public class WarehouseServiceTest {
 
     @Test
     public void testClearDB() {
-        warehouseService.createProduct("Test Product", 10.0, 5);
-        warehouseService.createGroup("Test Group");
+        warehouseService.createProduct("Test Product", "Manufacturer!", "Description!", 10.0, 5);
+        warehouseService.createGroup("Test Group", "Group Description");
 
         assertFalse(warehouseService.getProducts().isEmpty());
         assertFalse(warehouseService.getGroups().isEmpty());

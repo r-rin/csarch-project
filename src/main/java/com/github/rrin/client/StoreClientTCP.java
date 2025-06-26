@@ -101,12 +101,12 @@ public class StoreClientTCP {
     }
 
     // Product operations
-    public DataPacket<CommandResponse> createProduct(String name, double price, int quantity) throws Exception {
-        return createProduct(name, price, quantity, DEFAULT_TIMEOUT_SECONDS);
+    public DataPacket<CommandResponse> createProduct(String name, String manufacturer, String description, double price, int quantity) throws Exception {
+        return createProduct(name, manufacturer, description, price, quantity, DEFAULT_TIMEOUT_SECONDS);
     }
 
-    public DataPacket<CommandResponse> createProduct(String name, double price, int quantity, int timeoutSeconds) throws Exception {
-        CreateProduct request = new CreateProduct(name, price, quantity);
+    public DataPacket<CommandResponse> createProduct(String name, String manufacturer, String description, double price, int quantity, int timeoutSeconds) throws Exception {
+        CreateProduct request = new CreateProduct(name, manufacturer, description, price, quantity);
         return sendRequestAndWait(CommandType.CREATE_PRODUCT, request, timeoutSeconds);
     }
 
@@ -157,12 +157,12 @@ public class StoreClientTCP {
     }
 
     // Group operations
-    public DataPacket<CommandResponse> createGroup(String groupName) throws Exception {
-        return createGroup(groupName, DEFAULT_TIMEOUT_SECONDS);
+    public DataPacket<CommandResponse> createGroup(String groupName, String description) throws Exception {
+        return createGroup(groupName, description, DEFAULT_TIMEOUT_SECONDS);
     }
 
-    public DataPacket<CommandResponse> createGroup(String groupName, int timeoutSeconds) throws Exception {
-        CreateGroup request = new CreateGroup(groupName);
+    public DataPacket<CommandResponse> createGroup(String groupName, String description, int timeoutSeconds) throws Exception {
+        CreateGroup request = new CreateGroup(groupName, description);
         return sendRequestAndWait(CommandType.CREATE_GROUP, request, timeoutSeconds);
     }
 
