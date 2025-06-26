@@ -226,10 +226,22 @@ public class MySQLProductProcessor implements IProcessor, Runnable {
             if (quantityUpdated) message.append("quantity=").append(data.quantity()).append(" ");
         }
 
+        if (data.manufacturer() != null) {
+            boolean quantityUpdated = warehouseService.setProductManufacturer(data.id(), data.manufacturer());
+            success = success && quantityUpdated;
+            if (quantityUpdated) message.append("manufacturer=").append(data.quantity()).append(" ");
+        }
+
+        if (data.description() != null) {
+            boolean quantityUpdated = warehouseService.setProductDescription(data.id(), data.description());
+            success = success && quantityUpdated;
+            if (quantityUpdated) message.append("description=").append(data.quantity()).append(" ");
+        }
+
         if (success) {
             Product updatedProduct = warehouseService.getProduct(data.id());
             System.out.println(message);
-            return new CommandResponse(200, "Success", message.toString() +"\n"+ updatedProduct);
+            return new CommandResponse(200, "Success", message +"\n"+ updatedProduct.toFormatted());
         } else {
             return new CommandResponse(400, "Error", "Failed to update product");
         }
@@ -280,12 +292,12 @@ public class MySQLProductProcessor implements IProcessor, Runnable {
     }
 
     // Group CRUD handlers
-    private CommandResponse handleCreateGroup(CreateGroup data) {
+    private CommandResponse handleCreateGroup(CreateGroup data) throws JsonProcessingException {
         int id = warehouseService.createGroup(data.groupName(), data.description());
         if (id > 0) {
             String message = String.format("Created group: %s (ID: %d)", data.groupName(), id);
             System.out.println(message);
-            return new CommandResponse(201, "Created", message);
+            return new CommandResponse(201, "Created", objectMapper.writeValueAsString(id));
         } else {
             return new CommandResponse(400, "Error", "Failed to create group");
         }
@@ -302,6 +314,7 @@ public class MySQLProductProcessor implements IProcessor, Runnable {
 
     private CommandResponse handleUpdateGroup(UpdateGroup data) {
         boolean success = warehouseService.setGroupName(data.id(), data.name());
+        success = success || warehouseService.setGroupDescription(data.id(), data.description());
         if (success) {
             Group updatedGroup = warehouseService.getGroup(data.id());
             String message = String.format("Updated group (ID: %d): name=%s", data.id(), data.name());

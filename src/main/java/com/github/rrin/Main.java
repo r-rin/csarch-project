@@ -1,6 +1,5 @@
 package com.github.rrin;
 
-import com.github.rrin.implementation.db.MySQLManager;
 import com.github.rrin.util.MySQLOptions;
 
 public class Main {
@@ -11,6 +10,7 @@ public class Main {
                 "warehouse_pass"
         );
 
-        //MySQLManager databaseManager = new MySQLManager(options);
+        StoreServerTCP serverTCP = new StoreServerTCP(27001);
+        serverTCP.start();
     }
 }

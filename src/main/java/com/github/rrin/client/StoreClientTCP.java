@@ -119,12 +119,12 @@ public class StoreClientTCP {
         return sendRequestAndWait(CommandType.GET_PRODUCT, request, timeoutSeconds);
     }
 
-    public DataPacket<CommandResponse> updateProduct(int id, String name, Double price, Integer quantity) throws Exception {
-        return updateProduct(id, name, price, quantity, DEFAULT_TIMEOUT_SECONDS);
+    public DataPacket<CommandResponse> updateProduct(int id, String name, String manufacturer, String description, Double price, Integer quantity) throws Exception {
+        return updateProduct(id, name, manufacturer, description, price, quantity, DEFAULT_TIMEOUT_SECONDS);
     }
 
-    public DataPacket<CommandResponse> updateProduct(int id, String name, Double price, Integer quantity, int timeoutSeconds) throws Exception {
-        UpdateProduct request = new UpdateProduct(id, name, price, quantity);
+    public DataPacket<CommandResponse> updateProduct(int id, String name, String manufacturer, String description, Double price, Integer quantity, int timeoutSeconds) throws Exception {
+        UpdateProduct request = new UpdateProduct(id, name, manufacturer, description, price, quantity);
         return sendRequestAndWait(CommandType.UPDATE_PRODUCT, request, timeoutSeconds);
     }
 
@@ -175,12 +175,12 @@ public class StoreClientTCP {
         return sendRequestAndWait(CommandType.GET_GROUP, request, timeoutSeconds);
     }
 
-    public DataPacket<CommandResponse> updateGroup(int id, String name) throws Exception {
-        return updateGroup(id, name, DEFAULT_TIMEOUT_SECONDS);
+    public DataPacket<CommandResponse> updateGroup(int id, String name, String description) throws Exception {
+        return updateGroup(id, name, description, DEFAULT_TIMEOUT_SECONDS);
     }
 
-    public DataPacket<CommandResponse> updateGroup(int id, String name, int timeoutSeconds) throws Exception {
-        UpdateGroup request = new UpdateGroup(id, name);
+    public DataPacket<CommandResponse> updateGroup(int id, String name, String description, int timeoutSeconds) throws Exception {
+        UpdateGroup request = new UpdateGroup(id, name, description);
         return sendRequestAndWait(CommandType.UPDATE_GROUP, request, timeoutSeconds);
     }
 
