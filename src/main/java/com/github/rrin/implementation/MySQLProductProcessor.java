@@ -1,5 +1,6 @@
 package com.github.rrin.implementation;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.rrin.dto.*;
 import com.github.rrin.dto.AddProductToGroup;
@@ -178,22 +179,22 @@ public class MySQLProductProcessor implements IProcessor, Runnable {
         return new CommandResponse(200, "Success", "The server is running.");
     }
 
-    private CommandResponse handleCreateProduct(CreateProduct data) {
+    private CommandResponse handleCreateProduct(CreateProduct data) throws JsonProcessingException {
         int id = warehouseService.createProduct(data.name(), data.manufacturer(), data.description(), data.price(), data.quantity());
         if (id > 0) {
             Product product = new Product(id, data.name(),  data.manufacturer(), data.description(), data.price(), data.quantity());
             String message = String.format("Created product: %s (ID: %d)", data.name(), id);
             System.out.println(message);
-            return new CommandResponse(201, "Created", message);
+            return new CommandResponse(201, "Created", objectMapper.writeValueAsString(product));
         } else {
             return new CommandResponse(400, "Error", "Failed to create product");
         }
     }
 
-    private CommandResponse handleGetProduct(GetProduct data) {
+    private CommandResponse handleGetProduct(GetProduct data) throws JsonProcessingException {
         Product product = warehouseService.getProduct(data.id());
         if (product != null) {
-            return new CommandResponse(200, "Success", "Product found\n" + product);
+            return new CommandResponse(200, "Success", objectMapper.writeValueAsString(product));
         } else {
             return new CommandResponse(404, "Not Found", "Product not found with ID: " + data.id());
         }
@@ -245,12 +246,12 @@ public class MySQLProductProcessor implements IProcessor, Runnable {
         }
     }
 
-    private CommandResponse handleGetAllProducts() {
+    private CommandResponse handleGetAllProducts() throws JsonProcessingException {
         List<Product> products = warehouseService.getProducts();
-        return new CommandResponse(200, "Success", "Retrieved " + products.size() + " products" + "\n" + products);
+        return new CommandResponse(200, "Success", objectMapper.writeValueAsString(products));
     }
 
-    private CommandResponse handleSearchProducts(SearchProducts data) {
+    private CommandResponse handleSearchProducts(SearchProducts data) throws JsonProcessingException {
         ProductSearchFilters filters = new ProductSearchFilters(
                 data.name(),
                 data.groupId(),
@@ -275,7 +276,7 @@ public class MySQLProductProcessor implements IProcessor, Runnable {
                 searchResult.getCurrentPage() + 1,
                 response.getTotalPages());
 
-        return new CommandResponse(200, "Success", message + "\n" + response);
+        return new CommandResponse(200, "Success", objectMapper.writeValueAsString(response));
     }
 
     // Group CRUD handlers
@@ -290,10 +291,10 @@ public class MySQLProductProcessor implements IProcessor, Runnable {
         }
     }
 
-    private CommandResponse handleGetGroup(GetGroup data) {
+    private CommandResponse handleGetGroup(GetGroup data) throws JsonProcessingException {
         Group group = warehouseService.getGroup(data.id());
         if (group != null) {
-            return new CommandResponse(200, "Success", "Group found:\n " + group);
+            return new CommandResponse(200, "Success", objectMapper.writeValueAsString(group));
         } else {
             return new CommandResponse(404, "Not Found", "Group not found with ID: " + data.id());
         }
@@ -322,9 +323,9 @@ public class MySQLProductProcessor implements IProcessor, Runnable {
         }
     }
 
-    private CommandResponse handleGetAllGroups() {
+    private CommandResponse handleGetAllGroups() throws JsonProcessingException {
         List<Group> groups = warehouseService.getGroups();
-        return new CommandResponse(200, "Success", "Retrieved " + groups.size() + " groups" + "\n " + groups);
+        return new CommandResponse(200, "Success", objectMapper.writeValueAsString(groups));
     }
 
     // Product-Group relationship handlers
@@ -354,16 +355,14 @@ public class MySQLProductProcessor implements IProcessor, Runnable {
         }
     }
 
-    private CommandResponse handleGetProductGroups(GetProductGroups data) {
+    private CommandResponse handleGetProductGroups(GetProductGroups data) throws JsonProcessingException {
         List<Group> groups = warehouseService.getProductGroups(data.productId());
-        return new CommandResponse(200, "Success",
-                "Retrieved " + groups.size() + " groups for product ID: " + data.productId() + "\n " + groups);
+        return new CommandResponse(200, "Success", objectMapper.writeValueAsString(groups));
     }
 
-    private CommandResponse handleGetGroupProducts(GetGroupProducts data) {
+    private CommandResponse handleGetGroupProducts(GetGroupProducts data) throws JsonProcessingException {
         List<Product> products = warehouseService.getGroupProducts(data.groupId());
-        return new CommandResponse(200, "Success",
-                "Retrieved " + products.size() + " products for group ID: " + data.groupId() + "\n " + products);
+        return new CommandResponse(200, "Success", objectMapper.writeValueAsString(products));
     }
 
     private <T> T convertValue(Object data, Class<T> clazz) {
